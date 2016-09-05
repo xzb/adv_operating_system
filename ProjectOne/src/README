@@ -1,0 +1,31 @@
+// upload files
+scp Server.java netid@dc01.utdallas.edu:~/aos
+scp Node.java netid@dc01.utdallas.edu:~/aos
+scp Message.java netid@dc01.utdallas.edu:~/aos
+
+// compile and run
+ssh netid@dc01.utdallas.edu
+cd ~/aos
+javac Server.java
+java Server 0
+
+// open other four terminals
+ssh netid@dc33.utdallas.edu
+cd ~/aos
+java Server 1
+
+ssh netid@dc21.utdallas.edu
+cd ~/aos
+java Server 2
+
+ssh netid@dc33.utdallas.edu
+cd ~/aos
+java Server 3
+
+ssh netid@dc22.utdallas.edu
+cd ~/aos
+java Server 4
+
+
+// explain
+The program will create socket server once started; after 30 seconds, the program will start send the path message.
