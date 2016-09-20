@@ -4,6 +4,8 @@
 
 public class Message
 {
+    public final static String COMPLETE = "COMPLETE";
+
     private String obWholePath;
     private String obHasVisit;
     private int obLabelSum;

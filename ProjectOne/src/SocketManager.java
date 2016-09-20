@@ -26,7 +26,7 @@ public class SocketManager {
             ex.printStackTrace();
         }
     }
-    public static void receiveByTCP(int arPort, Server obj)
+    public static void receiveByTCP(int arPort, Project1 obj)
     {
         String message = "";
         try
@@ -51,6 +51,6 @@ public class SocketManager {
     }
     public static void sendBySCTP(String arHostname, int arPort, String arMsg)
     {}
-    public static void receiveBySCTP(int arPort, Server obj)
+    public static void receiveBySCTP(int arPort, Project1 obj)
     {}
 }

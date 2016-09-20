@@ -1,9 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Created by xiezebin on 9/4/16.
@@ -77,7 +75,7 @@ public class Node
             String line = "";
             try
             {
-                FileReader fr = new FileReader("config.txt");
+                FileReader fr = new FileReader("../config.txt");
                 BufferedReader bfr= new BufferedReader(fr);
 
                 while((line = bfr.readLine()) != null){
@@ -99,6 +97,15 @@ public class Node
             }*/
         }
         return obPool.get(arNodeId);
+    }
+
+    public static Set<Integer> getAllNodeIds()
+    {
+        if (obPool == null)
+        {
+            return new HashSet<Integer>();
+        }
+        return obPool.keySet();
     }
 
     public int getPort()

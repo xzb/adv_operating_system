@@ -1,16 +1,30 @@
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Created by xiezebin on 9/2/16.
+ *
+ * Make sure config.txt is formatted as below:
+ *
+ * 0 dc01.utdallas.edu 3334 1,2,3,4
+ * 1 dc33.utdallas.edu 5678 3,2,4
+ * 2 dc21.utdallas.edu 5231 1,2,3,4,0
+ * 3 dc33.utdallas.edu 2311 4,0,1,2
+ * 4 dc22.utdallas.edu 3124 1,2,3,2,3,1
+ *
  */
 
-public class Server
+public class Project1
 {
     private final static boolean SOCKET_BY_SCTP = false;
     private Node obNode;
+    private Set<Integer> obCompleteNId;
 
-    public Server(String arNodeId)
+    public Project1(String arNodeId)
     {
         //obNode = new Node(Integer.valueOf(arNodeId));
         obNode = Node.getNode(Integer.valueOf(arNodeId));
+        obCompleteNId = new HashSet<>();
     }
     public String getInitMsg()
     {
@@ -24,6 +38,23 @@ public class Server
     public void checkMessage(String arMsg)
     {
         // System.out.println("Message: " + arMsg);
+
+        /*
+         * if receive COMPLETE from all server, halt and exit
+         */
+        String[] parts = arMsg.split(";");
+        if (Message.COMPLETE.equals(parts[0]))
+        {
+            int fromId = Integer.valueOf(parts[1]);
+            obCompleteNId.add(fromId);
+            if (obCompleteNId.equals(Node.getAllNodeIds()))
+            {
+                System.out.println("Received COMPLETE message from all nodes. Terminate now.");
+                System.exit(0);
+            }
+            return;
+        }
+
 
         Message loMessage = Message.deSerialize(arMsg);
         if(loMessage == null)
@@ -39,9 +70,13 @@ public class Server
             System.out.println("Node label: " + obNode.getLabel() +
                     ", path label sum: " + loMessage.getLabelSum());
 
-            // broadcast COMPLETE TODO
-            //for each node
-            //send()
+            // broadcast COMPLETE
+            Set<Integer> allNodeIds = Node.getAllNodeIds();
+            for (int nodeId : allNodeIds)
+            {
+                Node loNode = Node.getNode(nodeId);
+                send(loNode, Message.COMPLETE + ";" + obNode.getId());        // send COMPLETE + Id
+            }
         }
         else
         {
@@ -57,7 +92,7 @@ public class Server
      */
     public void runServer()
     {
-        if(SOCKET_BY_SCTP)
+        if (SOCKET_BY_SCTP)
         {
             SocketManager.receiveBySCTP(obNode.getPort(), this);
         }
@@ -92,7 +127,7 @@ public class Server
             System.exit(1);
         }
 
-        final Server serverObj = new Server(args[0]);
+        final Project1 serverObj = new Project1(args[0]);
 
         // trigger event after 30 seconds
         Runnable trigger = new Runnable() {
