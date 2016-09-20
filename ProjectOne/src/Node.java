@@ -1,3 +1,8 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -11,10 +16,12 @@ public class Node
     private String obPath;
     private int obLabel;
 
+    private static Map<Integer, Node> obPool;
+    /*
     public Node(int arId)
     {
         obId = arId;
-        obLabel = new Random().nextInt(100);        // select a label value when initializing
+        obLabel = new Random().nextInt(10) + 1;        // select a label in [1,10] when initializing
 
         switch (arId)
         {
@@ -45,7 +52,53 @@ public class Node
                 break;
             default:
         }
+    }
+    */
+    private Node(int arNodeId, String arHostname, int arPort, String arPath)
+    {
+        obId = arNodeId;
+        obHostname = arHostname;
+        obPort = arPort;
+        obPath = obId + "," + arPath + "," + obId;          // add head and tail
+        obLabel = new Random().nextInt(10) + 1;        // select a label in [1,10] when initializing
+    }
 
+    public static Node getNode(int arNodeId)
+    {
+        if (obPool == null)
+        {
+            obPool = new HashMap<>();
+        }
+        if (!obPool.containsKey(arNodeId))
+        {
+            /*
+            *   Read whole config.txt file and save all nodes info
+            */
+            String line = "";
+            try
+            {
+                FileReader fr = new FileReader("config.txt");
+                BufferedReader bfr= new BufferedReader(fr);
+
+                while((line = bfr.readLine()) != null){
+                    String[] parts = line.split(" ");
+                    Node loNode = new Node(Integer.valueOf(parts[0]), parts[1], Integer.valueOf(parts[2]), parts[3]);
+                    obPool.put(Integer.valueOf(parts[0]), loNode);
+                }
+                bfr.close();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+            /*while (line = FileIO.read("config.txt") != null)
+            {
+                String[] parts = line.split(" ");
+                Node loNode = new Node(Integer.valueOf(parts[0]), parts[1], Integer.valueOf(parts[2]), parts[3]);
+                obPool.put(Integer.valueOf(parts[0]), loNode);
+            }*/
+        }
+        return obPool.get(arNodeId);
     }
 
     public int getPort()

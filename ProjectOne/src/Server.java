@@ -1,16 +1,16 @@
 /**
  * Created by xiezebin on 9/2/16.
  */
-import java.io.*;
-import java.net.*;
 
 public class Server
 {
+    private final static boolean SOCKET_BY_SCTP = false;
     private Node obNode;
 
     public Server(String arNodeId)
     {
-        obNode = new Node(Integer.valueOf(arNodeId));
+        //obNode = new Node(Integer.valueOf(arNodeId));
+        obNode = Node.getNode(Integer.valueOf(arNodeId));
     }
     public String getInitMsg()
     {
@@ -38,11 +38,15 @@ public class Server
             // print final value
             System.out.println("Node label: " + obNode.getLabel() +
                     ", path label sum: " + loMessage.getLabelSum());
+
+            // broadcast COMPLETE TODO
+            //for each node
+            //send()
         }
         else
         {
             // forward if different
-            Node loNextNode = new Node(loMessage.getNextNodeId());
+            Node loNextNode = Node.getNode(loMessage.getNextNodeId());
             send(loNextNode, loMessage.serialize());
         }
 
@@ -53,25 +57,13 @@ public class Server
      */
     public void runServer()
     {
-        String message = "";
-        try
+        if(SOCKET_BY_SCTP)
         {
-            ServerSocket serverSock = new ServerSocket(obNode.getPort());
-
-            while(true)
-            {
-                Socket sock = serverSock.accept();  // listen and accept
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-                message = reader.readLine();        // blocked until a message is received
-                reader.close();
-
-                checkMessage(message);
-            }
+            SocketManager.receiveBySCTP(obNode.getPort(), this);
         }
-        catch(IOException ex)
+        else
         {
-            ex.printStackTrace();
+            SocketManager.receiveByTCP(obNode.getPort(), this);
         }
     }
 
@@ -82,18 +74,13 @@ public class Server
      */
     public void send(Node arNextNode, String arMsg)
     {
-        try
+        if(SOCKET_BY_SCTP)
         {
-            Socket clientSocket = new Socket(arNextNode.getHostname(), arNextNode.getPort());
-
-            // send path info
-            PrintWriter writer = new PrintWriter(clientSocket.getOutputStream());
-            writer.println(arMsg);
-            writer.close();
+            SocketManager.sendBySCTP(arNextNode.getHostname(), arNextNode.getPort(), arMsg);
         }
-        catch(IOException ex)
+        else
         {
-            ex.printStackTrace();
+            SocketManager.sendByTCP(arNextNode.getHostname(), arNextNode.getPort(), arMsg);
         }
     }
 
@@ -101,7 +88,7 @@ public class Server
     {
         if (args.length < 1)
         {
-            System.out.println("Please add server id.");
+            System.out.println("Please add serverId.");
             System.exit(1);
         }
 
