@@ -28,7 +28,8 @@ public class Project1
     }
     public String getInitMsg()
     {
-        return new Message(obNode.getPath(), "", 0).serialize();
+        int startLabel = obNode.getLabel();                 // exclude start label
+        return new Message(obNode.getPath(), "", -startLabel).serialize();
     }
 
     /**
@@ -49,7 +50,7 @@ public class Project1
             obCompleteNId.add(fromId);
             if (obCompleteNId.equals(Node.getAllNodeIds()))
             {
-                System.out.println("Received COMPLETE message from all nodes. Terminate now.");
+                System.out.println("# Received COMPLETE message from all nodes. Terminate now.");
                 System.exit(0);
             }
             return;
@@ -67,7 +68,7 @@ public class Project1
         if (loMessage.getWholePath().equals(loMessage.getHasVisit()))
         {
             // print final value
-            System.out.println("Node label: " + obNode.getLabel() +
+            System.out.println("# Node label: " + obNode.getLabel() +
                     ", path label sum: " + loMessage.getLabelSum());
 
             // broadcast COMPLETE
@@ -123,7 +124,7 @@ public class Project1
     {
         if (args.length < 1)
         {
-            System.out.println("Please add serverId.");
+            System.out.println("# Please add serverId.");
             System.exit(1);
         }
 
@@ -138,7 +139,7 @@ public class Project1
                 }
                 catch (Exception e)
                 {}
-                System.out.println("Triggered an event.");
+                System.out.println("# Triggered an event.");
                 String loStartMsg = serverObj.getInitMsg();
                 serverObj.checkMessage(loStartMsg);
             }

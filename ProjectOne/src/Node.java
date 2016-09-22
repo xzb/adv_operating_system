@@ -75,13 +75,17 @@ public class Node
             String line = "";
             try
             {
-                FileReader fr = new FileReader("../config.txt");
+                FileReader fr = new FileReader("config.txt");
                 BufferedReader bfr= new BufferedReader(fr);
 
                 while((line = bfr.readLine()) != null){
-                    String[] parts = line.split(" ");
-                    Node loNode = new Node(Integer.valueOf(parts[0]), parts[1], Integer.valueOf(parts[2]), parts[3]);
-                    obPool.put(Integer.valueOf(parts[0]), loNode);
+                    char digit = line.charAt(0);
+                    if (digit <= '9' && digit >= '0')
+                    {
+                        String[] parts = line.split(" ");
+                        Node loNode = new Node(Integer.valueOf(parts[0]), parts[1], Integer.valueOf(parts[2]), parts[3]);
+                        obPool.put(Integer.valueOf(parts[0]), loNode);
+                    }
                 }
                 bfr.close();
             }

@@ -5,6 +5,8 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+//import com.sun.nio.sctp.*;
+
 /**
  * Created by xiezebin on 9/19/16.
  */
@@ -50,7 +52,11 @@ public class SocketManager {
         }
     }
     public static void sendBySCTP(String arHostname, int arPort, String arMsg)
-    {}
+    {
+
+    }
     public static void receiveBySCTP(int arPort, Project1 obj)
-    {}
+    {
+
+    }
 }
