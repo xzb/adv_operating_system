@@ -11,8 +11,33 @@ import java.net.Socket;
  * Created by xiezebin on 9/19/16.
  */
 public class SocketManager {
+    private final static boolean SOCKET_BY_SCTP = false;
 
-    public static void sendByTCP(String arHostname, int arPort, String arMsg)
+    public static void send(String arHostname, int arPort, String arMsg)
+    {
+        //System.out.println("#SEND " + arHostname + ";" + arPort + ";" + arMsg + ";");
+        if(SOCKET_BY_SCTP)
+        {
+            SocketManager.sendBySCTP(arHostname, arPort, arMsg);
+        }
+        else
+        {
+            SocketManager.sendByTCP(arHostname, arPort, arMsg);
+        }
+    }
+    public static void receive(int arPort, ServerLauncher server)
+    {
+        if (SOCKET_BY_SCTP)
+        {
+            SocketManager.receiveBySCTP(arPort, server);
+        }
+        else
+        {
+            SocketManager.receiveByTCP(arPort, server);
+        }
+    }
+
+    private static void sendByTCP(String arHostname, int arPort, String arMsg)
     {
         try
         {
@@ -28,7 +53,7 @@ public class SocketManager {
             ex.printStackTrace();
         }
     }
-    public static void receiveByTCP(int arPort, Project1 obj)
+    private static void receiveByTCP(int arPort, ServerLauncher server)
     {
         String message = "";
         try
@@ -43,7 +68,9 @@ public class SocketManager {
                 message = reader.readLine();        // blocked until a message is received
                 reader.close();
 
-                obj.checkMessage(message);
+                if (server != null) {
+                    server.checkMessage(message);
+                }
             }
         }
         catch(IOException ex)
@@ -51,11 +78,11 @@ public class SocketManager {
             ex.printStackTrace();
         }
     }
-    public static void sendBySCTP(String arHostname, int arPort, String arMsg)
+    private static void sendBySCTP(String arHostname, int arPort, String arMsg)
     {
 
     }
-    public static void receiveBySCTP(int arPort, Project1 obj)
+    private static void receiveBySCTP(int arPort, ServerLauncher obj)
     {
 
     }

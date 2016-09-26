@@ -45,8 +45,12 @@ public class Message
     public int getNextNodeId()
     {
         String[] loWholePaths = obWholePath.split(",");
-        String[] loVisitedPaths = obHasVisit.split(",");
+        if (obHasVisit.length() == 0)
+        {
+            return Integer.valueOf(loWholePaths[0]);
+        }
 
+        String[] loVisitedPaths = obHasVisit.split(",");
         return Integer.valueOf(loWholePaths[loVisitedPaths.length]);    //check
     }
 

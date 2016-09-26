@@ -14,31 +14,27 @@ import java.util.Set;
  *
  */
 
-public class Project1
+public class ServerLauncher
 {
-    private final static boolean SOCKET_BY_SCTP = false;
     private Node obNode;
     private Set<Integer> obCompleteNId;
 
-    public Project1(String arNodeId)
+    public ServerLauncher(int arNodeId)
     {
-        //obNode = new Node(Integer.valueOf(arNodeId));
-        obNode = Node.getNode(Integer.valueOf(arNodeId));
+        //obNode = Node.getNode(arNodeId, arHostname, arPort, arPath);
+        obNode = Node.getNode(arNodeId);
         obCompleteNId = new HashSet<>();
     }
-    public String getInitMsg()
-    {
-        int startLabel = obNode.getLabel();                 // exclude start label
-        return new Message(obNode.getPath(), "", -startLabel).serialize();
-    }
+
 
     /**
-     * check whether the whole path is traversed
+     * Callback function when server receives messages.
+     * Check whether the whole path is traversed.
      * @param arMsg
      */
     public void checkMessage(String arMsg)
     {
-        // System.out.println("Message: " + arMsg);
+        //System.out.println("# Message: " + arMsg);
 
         /*
          * if receive COMPLETE from all server, halt and exit
@@ -57,6 +53,9 @@ public class Project1
         }
 
 
+        /*
+         * check if destination is reached, otherwise append current node to path
+         */
         Message loMessage = Message.deSerialize(arMsg);
         if(loMessage == null)
         {
@@ -68,8 +67,9 @@ public class Project1
         if (loMessage.getWholePath().equals(loMessage.getHasVisit()))
         {
             // print final value
-            System.out.println("# Node label: " + obNode.getLabel() +
-                    ", path label sum: " + loMessage.getLabelSum());
+            String resultMsg = "# Node Id: " + obNode.getId() + ", label: " + obNode.getLabel() + ", path label sum: " + loMessage.getLabelSum();
+            System.out.println(resultMsg);
+            FileIO.writeResultToFile("ResultOfNode" + obNode.getId(), resultMsg);
 
             // broadcast COMPLETE
             Set<Integer> allNodeIds = Node.getAllNodeIds();
@@ -83,24 +83,23 @@ public class Project1
         {
             // forward if different
             Node loNextNode = Node.getNode(loMessage.getNextNodeId());
+            //System.out.println("# Forward an event.");
+            //System.out.println("# hostname: " + loNextNode.getHostname());
+            //System.out.println("# port: " + loNextNode.getPort());
+            //System.out.println("# msg: " + loMessage.serialize());
+
             send(loNextNode, loMessage.serialize());
         }
 
     }
+
 
     /**
      * permanent loop of server socket
      */
     public void runServer()
     {
-        if (SOCKET_BY_SCTP)
-        {
-            SocketManager.receiveBySCTP(obNode.getPort(), this);
-        }
-        else
-        {
-            SocketManager.receiveByTCP(obNode.getPort(), this);
-        }
+        SocketManager.receive(obNode.getPort(), this);
     }
 
     /**
@@ -110,45 +109,26 @@ public class Project1
      */
     public void send(Node arNextNode, String arMsg)
     {
-        if(SOCKET_BY_SCTP)
-        {
-            SocketManager.sendBySCTP(arNextNode.getHostname(), arNextNode.getPort(), arMsg);
-        }
-        else
-        {
-            SocketManager.sendByTCP(arNextNode.getHostname(), arNextNode.getPort(), arMsg);
-        }
+        SocketManager.send(arNextNode.getHostname(), arNextNode.getPort(), arMsg);
     }
 
     public static void main(String args[])
     {
-        if (args.length < 1)
+        if (args.length < 2)
         {
-            System.out.println("# Please add serverId.");
+            //System.out.println("# Please add serverId, hostname, port, path.");
+            System.out.println("# Please add serverId, configFile.");
             System.exit(1);
         }
 
-        final Project1 serverObj = new Project1(args[0]);
+        int loNodeId = Integer.valueOf(args[0]);
+        FileIO.CONFIG_FILE = args[1];
 
-        // trigger event after 30 seconds
-        Runnable trigger = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(30 * 1000);
-                }
-                catch (Exception e)
-                {}
-                System.out.println("# Triggered an event.");
-                String loStartMsg = serverObj.getInitMsg();
-                serverObj.checkMessage(loStartMsg);
-            }
-        };
-        new Thread(trigger).start();
+        ServerLauncher server = new ServerLauncher(loNodeId);
 
 
         // run server
-        serverObj.runServer();
+        server.runServer();
 
     }
 

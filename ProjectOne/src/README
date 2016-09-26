@@ -4,30 +4,32 @@ scp * netid@dc01.utdallas.edu:~/CS6378/Project1/bin
 //########### compile and run ###########
 ssh netid@dc01.utdallas.edu
 cd ~/CS6378/Project1/bin
-javac Server.java
-java Server 0
+javac Project1.java
+java Project1 0
 
 //########### here I did not use script from teacher ###########
 //########### open other terminals that are indicated in config.txt ###########
 ssh netid@dc33.utdallas.edu
 cd ~/aos
-java Server 1
+java Project1 1
 
 ssh netid@dc21.utdallas.edu
 cd ~/aos
-java Server 2
+java Project1 2
 
 ssh netid@dc33.utdallas.edu
 cd ~/aos
-java Server 3
+java Project1 3
 
 ssh netid@dc22.utdallas.edu
 cd ~/aos
-java Server 4
+java Project1 4
 
 
 // ########### explain ###########
-The program will create socket server once started; after 30 seconds, the program will start send the path message.
+The program will create socket server once started; after 30 seconds, the program will start send the path message. 
+The program will halt after receiving COMPLETE from all other servers. The result is save in files “ResultOfNode**”, ** is node id.
+
 
 // ########### config.txt should have format ###########
 0 dc01.utdallas.edu 3334 1,2,3,4

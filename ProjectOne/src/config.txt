@@ -1,5 +1,0 @@
-0 dc01.utdallas.edu 3334 1,2,3,4
-1 dc33.utdallas.edu 5678 3,2,4
-2 dc21.utdallas.edu 5231 1,2,3,4,0
-3 dc33.utdallas.edu 2311 4,0,1,2
-4 dc22.utdallas.edu 3124 1,2,3,2,3,1
