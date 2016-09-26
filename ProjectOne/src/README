@@ -1,39 +1,24 @@
+//## for upload usage: change src to bin, move script files outside of folder.
+
 //########### upload files ###########
+scp * netid@dc01.utdallas.edu:~/CS6378/Project1
+cd bin
 scp * netid@dc01.utdallas.edu:~/CS6378/Project1/bin
 
-//########### compile and run ###########
+//########### compile ###########
 ssh netid@dc01.utdallas.edu
 cd ~/CS6378/Project1/bin
-javac Project1.java
-java Project1 0
+javac ServerLauncher.java
+javac EventTrigger.java
 
-//########### here I did not use script from teacher ###########
-//########### open other terminals that are indicated in config.txt ###########
-ssh netid@dc33.utdallas.edu
-cd ~/aos
-java Project1 1
-
-ssh netid@dc21.utdallas.edu
-cd ~/aos
-java Project1 2
-
-ssh netid@dc33.utdallas.edu
-cd ~/aos
-java Project1 3
-
-ssh netid@dc22.utdallas.edu
-cd ~/aos
-java Project1 4
-
+//########### run the modified scripts ###########
+cd ~/CS6378/Project1
+./launcher-server.sh
+./launcher-event.sh
 
 // ########### explain ###########
-The program will create socket server once started; after 30 seconds, the program will start send the path message. 
-The program will halt after receiving COMPLETE from all other servers. The result is save in files “ResultOfNode**”, ** is node id.
+1) launcher-server.sh will deploy servers as specified in config.txt.
+2) launcher-event.sh will trigger one event on each server, which will forward to next server in the path.
+3) When the last server receive the message, it will print the label value and label sum.
+4) The program will halt after receiving COMPLETE from all other servers.
 
-
-// ########### config.txt should have format ###########
-0 dc01.utdallas.edu 3334 1,2,3,4
-1 dc33.utdallas.edu 5678 3,2,4
-2 dc21.utdallas.edu 5231 1,2,3,4,0
-3 dc33.utdallas.edu 2311 4,0,1,2
-4 dc22.utdallas.edu 3124 1,2,3,2,3,1
