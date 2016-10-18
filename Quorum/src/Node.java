@@ -9,8 +9,8 @@ public class Node {
     int port;
     String hostname;
     Parser ps;
-    Set qset;
-    Set mset;
+    Set<Integer> qset;
+    Set<Integer> mset;
     Node(int ID){
         this.id=ID;
         ps=new Parser();
@@ -20,7 +20,7 @@ public class Node {
         this.qset=ps.qs.get(ID);
         this.mset=ps.ms.get(ID);
     }
-    public Node getNode(int ID){
+    public static Node getNode(int ID){
         Node node=new Node(ID);
         return node;
 
