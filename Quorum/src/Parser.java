@@ -13,17 +13,18 @@ import java.util.Set;
 import com.sun.nio.sctp.*;
 public class Parser {
 
-    HashMap<Integer,HashSet> ms;
-    HashMap<Integer,HashSet> qs;
+    HashMap<Integer,HashSet<Integer>> ms;
+    HashMap<Integer,HashSet<Integer>> qs;
     // int minPerActive;
     // int maxPerActive;
     // int minSendDelay;
     // int snapshotDelay;
     // int maxNumber;
-    String config="/Users/yql/Desktop/config.txt";
+    String config="config.txt";
 
-    Parser() {
-
+    Parser()
+    {
+        parse();
     }
     String[] portPath;
     String[] hostName;

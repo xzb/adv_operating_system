@@ -67,6 +67,7 @@ public class SocketManager {
                 message = reader.readLine();        // blocked until a message is received
                 reader.close();
 
+                System.out.println("Receive: " + message);
                 if (server != null) {
                     server.checkMessage(message);
                 }

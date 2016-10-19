@@ -53,11 +53,16 @@ public class Server {
             }
         };
         requestQueue = new PriorityQueue<>(com);
+
+        launch();
     }
-    public void launch()	// receive all message, update time when necessary, call Client.send()
+    private void launch()	// receive all message, update time when necessary, call Client.send()
                             // check message, call recvGrant(), recvFail(), recvInquire(), recvYield()
     {
-        SocketManager.receive(obNode.port, this);
+        Runnable launch = () -> {
+            SocketManager.receive(obNode.port, this);
+        };
+        new Thread(launch).start();
     }
     public void checkMessage(String arMessage)
     {
@@ -100,24 +105,35 @@ public class Server {
 
     public void enterCS()	// add to queue, sendRequest
     {
+        // add to log file
+        String log = nodeId + " request C.S. at lamportTime: " + lamportTime;
+        Tool.FileIO.writeFile(log);
+
         requestQueue.add(new long[]{lamportTime, nodeId});
-        if (nodeId == requestQueue.peek()[1])
+        if (!locked && nodeId == requestQueue.peek()[1])
         {
+            locked = true;                                  // update locked
+            permission_received_from_quorum.add(nodeId);
             sendByType(MESSAGE_TYPE.REQUEST);
         }
     }
-    public void actualEnterCS()
+    private void actualEnterCS()
     {
-        //TODO sleep amount of time, add to log file
-        // after sleep call leaveCS()
-
+        // add to log file
+        String log = nodeId + " enter C.S. at lamportTime: " + lamportTime;
+        Tool.FileIO.writeFile(log);
     }
     public void leaveCS()	// remove queue, sendRelease
     {
-        //TODO, add to log file
         if (nodeId == (int)requestQueue.peek()[1])
         {
-            locked = false;
+            // add to log file
+            String log = nodeId + " leave C.S. at lamportTime: " + lamportTime;
+            Tool.FileIO.writeFile(log);
+
+
+            locked = false;                                 // update locked
+            permission_received_from_quorum.clear();
             requestQueue.remove();
             sendByType(MESSAGE_TYPE.RELEASE);
         }
@@ -127,20 +143,21 @@ public class Server {
      * send message logic
      *********************************************/
     // broadcast to every quorum
-    public void sendByType(MESSAGE_TYPE arType)
+    private void sendByType(MESSAGE_TYPE arType)
     {
         lamportTime++;
         Set<Integer> quorumSet = obNode.qset;
         for(int qid : quorumSet)
         {
+            if (qid == nodeId)          //TODO should ignore itself?
+                continue;
             Node qNode = Node.getNode(qid);
             SocketManager.send(qNode.hostname, qNode.port, nodeId, lamportTime, arType.getTitle());
         }
     }
     // send to one quorum
-    public void sendByType(MESSAGE_TYPE arType, int dstNodeId)
+    private void sendByType(MESSAGE_TYPE arType, int dstNodeId)
     {
-        locked = true;
         lamportTime++;
         Node qNode = Node.getNode(dstNodeId);
         SocketManager.send(qNode.hostname, qNode.port, nodeId, lamportTime, arType.getTitle());
@@ -150,7 +167,7 @@ public class Server {
     /*********************************************
      * receive message logic
      *********************************************/
-    public void recvRequest(long scalaTime, int fromNodeId)
+    private void recvRequest(long scalaTime, int fromNodeId)
     {
         requestQueue.add(new long[]{scalaTime, fromNodeId});
 
@@ -160,15 +177,15 @@ public class Server {
             sendByType(MESSAGE_TYPE.GRANT, fromNodeId);
         }
     }
-    public void recvGrant(int fromNodeId)
+    private void recvGrant(int fromNodeId)
     {
         permission_received_from_quorum.add(fromNodeId);
         if (permission_received_from_quorum.equals(obNode.qset))
         {
-            actualEnterCS();
+            actualEnterCS();                    // actually enter CS after receive grant from all
         }
     }
-    public void recvRelease(int fromNodeId)
+    private void recvRelease(int fromNodeId)
     {
         if (fromNodeId == (int)requestQueue.peek()[1])
         {
@@ -186,8 +203,8 @@ public class Server {
     /*********************************************
      * preemption logic
      *********************************************/
-    public void recvFail(){}
-    public void recvInquire(){}
-    public void recvYield(){}
+    private void recvFail(){}
+    private void recvInquire(){}
+    private void recvYield(){}
 
 }
