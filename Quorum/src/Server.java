@@ -1,3 +1,4 @@
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -27,22 +28,34 @@ public class Server {
 
     private int nodeId;
     private Node obNode;
-    private boolean locked_boolean;
-    private int local_time;  	// increase each time of send or receive message
+    private boolean locked;
+    private long lamportTime;  	// increase each time of send or receive message
     private Set<Integer> permission_received_from_quorum;
-    private PriorityQueue<Integer> requestQueue;
+    private PriorityQueue<long[]> requestQueue;              //<timestamp, id>
 
     public Server(int arNodeId)
     {
         nodeId = arNodeId;
         obNode = Node.getNode(nodeId);
-        locked_boolean = false;
-        local_time = 0;
+        locked = false;
+        lamportTime = 0;
         permission_received_from_quorum = new HashSet<>();
-        requestQueue = new PriorityQueue<>();
+
+        Comparator<long[]> com = new Comparator<long[]>() {
+            @Override
+            public int compare(long[] o1, long[] o2) {
+                if (o1[0] < o2[0])
+                    return -1;
+                else if (o1[0] > o2[0])
+                    return 1;
+                else
+                    return (int) (o1[1] - o2[1]);   //de-tier by id
+            }
+        };
+        requestQueue = new PriorityQueue<>(com);
     }
     public void launch()	// receive all message, update time when necessary, call Client.send()
-                            // check message, call Grant(), Failed(), Inquire(), Yield()
+                            // check message, call recvGrant(), recvFail(), recvInquire(), recvYield()
     {
         SocketManager.receive(obNode.port, this);
     }
@@ -51,65 +64,130 @@ public class Server {
         // fromNodeId; scalarTime; messageType
         String[] parts = arMessage.split(";");
         int fromNodeId = Integer.valueOf(parts[0]);
-        int scalarTime = Integer.valueOf(parts[1]);
+        long scalarTime = Long.valueOf(parts[1]);
         String mType = parts[2];
+
+        if (scalarTime >= lamportTime)
+        {
+            lamportTime = scalarTime + 1;
+        }
 
         if (mType.equals(MESSAGE_TYPE.REQUEST.getTitle()))
         {
-
+            recvRequest(scalarTime, fromNodeId);
         }
         else if (mType.equals(MESSAGE_TYPE.GRANT.getTitle()))
-        {}
+        {
+            recvGrant(fromNodeId);
+        }
         else if (mType.equals(MESSAGE_TYPE.RELEASE.getTitle()))
-        {}
+        {
+            recvRelease(fromNodeId);
+        }
         else if (mType.equals(MESSAGE_TYPE.FAIL.getTitle()))
-        {}
+        {
+            recvFail();
+        }
         else if (mType.equals(MESSAGE_TYPE.INQUIRE.getTitle()))
-        {}
+        {
+            recvInquire();
+        }
         else if (mType.equals(MESSAGE_TYPE.YIELD.getTitle()))
-        {}
-    }
-
-    public void enterCS()	// add to queue, Request logic
-    {
-        requestQueue.add(nodeId);
-        if (nodeId == requestQueue.peek())
         {
-            Request();
+            recvYield();
         }
     }
-    public void leaveCS()	// remove queue, Release logic
+
+    public void enterCS()	// add to queue, sendRequest
     {
-        requestQueue.remove(nodeId);
-        Release();
+        requestQueue.add(new long[]{lamportTime, nodeId});
+        if (nodeId == requestQueue.peek()[1])
+        {
+            sendByType(MESSAGE_TYPE.REQUEST);
+        }
+    }
+    public void actualEnterCS()
+    {
+        //TODO sleep amount of time, add to log file
+        // after sleep call leaveCS()
+
+    }
+    public void leaveCS()	// remove queue, sendRelease
+    {
+        //TODO, add to log file
+        if (nodeId == (int)requestQueue.peek()[1])
+        {
+            locked = false;
+            requestQueue.remove();
+            sendByType(MESSAGE_TYPE.RELEASE);
+        }
     }
 
-    public void Request(){}	// send, add to log.txt
+    /*********************************************
+     * send message logic
+     *********************************************/
+    // broadcast to every quorum
+    public void sendByType(MESSAGE_TYPE arType)
     {
-        local_time++;
+        lamportTime++;
         Set<Integer> quorumSet = obNode.qset;
         for(int qid : quorumSet)
         {
             Node qNode = Node.getNode(qid);
-            SocketManager.send(qNode.hostname, qNode.port, nodeId, local_time, MESSAGE_TYPE.REQUEST.getTitle());
+            SocketManager.send(qNode.hostname, qNode.port, nodeId, lamportTime, arType.getTitle());
         }
     }
-    public void Grant()
+    // send to one quorum
+    public void sendByType(MESSAGE_TYPE arType, int dstNodeId)
     {
+        locked = true;
+        lamportTime++;
+        Node qNode = Node.getNode(dstNodeId);
+        SocketManager.send(qNode.hostname, qNode.port, nodeId, lamportTime, arType.getTitle());
+    }
 
-    }
-    public void Release()	// send, add to log.txt
+
+    /*********************************************
+     * receive message logic
+     *********************************************/
+    public void recvRequest(long scalaTime, int fromNodeId)
     {
-        local_time++;
-        Set<Integer> quorumSet = obNode.qset;
-        for(int qid : quorumSet)
+        requestQueue.add(new long[]{scalaTime, fromNodeId});
+
+        if (!locked && fromNodeId == (int)requestQueue.peek()[1])
         {
-            Node qNode = Node.getNode(qid);
-            SocketManager.send(qNode.hostname, qNode.port, nodeId, local_time, MESSAGE_TYPE.RELEASE.getTitle());
+            locked = true;
+            sendByType(MESSAGE_TYPE.GRANT, fromNodeId);
         }
     }
-    public void Fail(){}
-    public void Inquire(){}
-    public void Yield(){}
+    public void recvGrant(int fromNodeId)
+    {
+        permission_received_from_quorum.add(fromNodeId);
+        if (permission_received_from_quorum.equals(obNode.qset))
+        {
+            actualEnterCS();
+        }
+    }
+    public void recvRelease(int fromNodeId)
+    {
+        if (fromNodeId == (int)requestQueue.peek()[1])
+        {
+            locked = false;
+            requestQueue.remove();              // should remove top
+
+            if (!requestQueue.isEmpty()) {
+                long[] pair = requestQueue.peek();
+                locked = true;
+                sendByType(MESSAGE_TYPE.GRANT, (int) pair[1]);     // grant the next process
+            }
+        }
+    }
+
+    /*********************************************
+     * preemption logic
+     *********************************************/
+    public void recvFail(){}
+    public void recvInquire(){}
+    public void recvYield(){}
 
 }

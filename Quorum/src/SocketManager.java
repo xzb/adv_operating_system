@@ -11,7 +11,7 @@ import java.net.Socket;
 public class SocketManager {
     private final static boolean SOCKET_BY_SCTP = false;
 
-    public static void send(String arHostname, int arPort, int fromNodeId, int scalarTime, String arMsg)
+    public static void send(String arHostname, int arPort, int fromNodeId, long scalarTime, String arMsg)
     {
         //System.out.println("#SEND " + arHostname + ";" + arPort + ";" + arMsg + ";");
         String message = fromNodeId + ";" + scalarTime + ";" + arMsg;
