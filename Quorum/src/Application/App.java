@@ -1,3 +1,5 @@
+package Application;
+
 import java.util.Random;
 
 /**
@@ -10,7 +12,7 @@ public class App {
     private Server obServer;
     private int remainNumOfRequest;
 
-    App(int arId)
+    public App(int arId)
     {
         nodeId = arId;
         obNode = Node.getNode(nodeId);

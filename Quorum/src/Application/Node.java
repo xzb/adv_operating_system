@@ -1,22 +1,24 @@
-import java.util.Objects;
+package Application;
+
+import Tool.Parser;
 import java.util.Set;
 
 /**
  * Created by yxl154630 on 10/18/16.
  */
 public class Node {
-    int id;
-    int port;
-    String hostname;
+    public int id;
+    public int port;
+    public String hostname;
     private static Parser ps;
-    Set<Integer> qset;              // should include self
-    Set<Integer> mset;
+    public Set<Integer> qset;              // should include self
+    public Set<Integer> mset;
 
-    int REQUEST_DELAY;              // global parameter
-    int CS_EXE_TIME;
-    int Total_Request;
+    public int REQUEST_DELAY;              // global parameter
+    public int CS_EXE_TIME;
+    public int Total_Request;
 
-    Node(int ID){
+    public Node(int ID){
         this.id=ID;
         if (ps == null)             // only one call is needed
         {

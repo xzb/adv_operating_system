@@ -1,4 +1,7 @@
-import java.util.Random;
+package Test;
+
+import Application.*;
+import Tool.*;
 
 /**
  * Created by xiezebin on 10/19/16.

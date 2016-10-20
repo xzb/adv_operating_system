@@ -1,3 +1,4 @@
+package Tool;
 /**
  * Created by yxl154630 on 10/18/16.
  */
@@ -13,8 +14,8 @@ import java.util.Set;
 import com.sun.nio.sctp.*;
 public class Parser {
 
-    HashMap<Integer,HashSet<Integer>> ms;
-    HashMap<Integer,HashSet<Integer>> qs;
+    public HashMap<Integer,HashSet<Integer>> ms;
+    public HashMap<Integer,HashSet<Integer>> qs;
     // int minPerActive;
     // int maxPerActive;
     // int minSendDelay;
@@ -22,19 +23,19 @@ public class Parser {
     // int maxNumber;
     String config="config.txt";
 
-    Parser()
+    public String[] portPath;
+    public String[] hostName;
+    public int[] numPort;
+    public int allNodes;
+    public int REQUEST_DELAY;
+    public int CS_EXE_TIME;
+    public int Total_Request;
+
+
+    public Parser()
     {
         parse();
     }
-    String[] portPath;
-    String[] hostName;
-    int[] numPort;
-    int allNodes;
-    int REQUEST_DELAY;
-    int CS_EXE_TIME;
-    int Total_Request;
-
-
     void parse() {
         Path path = Paths.get(config);
         try (BufferedReader in = Files.newBufferedReader(path)

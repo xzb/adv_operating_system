@@ -1,3 +1,6 @@
+package Application;
+
+import Tool.SocketManager;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.PriorityQueue;
