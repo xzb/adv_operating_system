@@ -11,8 +11,6 @@ import java.util.Set;
  */
 public class ServerBase {
 
-    private boolean APPROACH_REQUEST_IN_ORDER = true;
-
     enum MESSAGE_TYPE {
         REQUEST("REQUEST"),
         GRANT("GRANT"),
@@ -40,8 +38,6 @@ public class ServerBase {
     private double obExeTime;
     private App.AppCallback obAppCallback;
 
-    public ServerBase()
-    {}
     public ServerBase(int arNodeId)
     {
         nodeId = arNodeId;
@@ -69,12 +65,20 @@ public class ServerBase {
                             // check message, call recvGrant(), recvFail(), recvInquire(), recvYield()
     {
         Runnable launch = () -> {
-            SocketManager.receive(obNode.port, this);
+            SocketManager.receive(obNode.port, new ServerCallback() {
+                @Override
+                public void call(String message) {
+                    checkMessage(message);
+                }
+            });
         };
         new Thread(launch).start();
     }
 
-    public void checkMessage(String arMessage)
+    public interface ServerCallback {
+        void call(String message);
+    }
+    private void checkMessage(String arMessage)
     {
         // fromNodeId; scalarTime; messageType
         String[] parts = arMessage.split(";");
@@ -238,8 +242,8 @@ public class ServerBase {
     /*********************************************
      * preemption logic
      *********************************************/
-    private void recvFail(){}
-    private void recvInquire(){}
-    private void recvYield(){}
+    protected void recvFail(){}
+    protected void recvInquire(){}
+    protected void recvYield(){}
 
 }

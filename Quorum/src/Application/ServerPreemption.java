@@ -5,8 +5,24 @@ package Application;
  */
 public class ServerPreemption extends ServerBase {
 
-    private void recvFail(){}
-    private void recvInquire(){}
-    private void recvYield(){}
+    public ServerPreemption(int arNodeId)
+    {
+        super(arNodeId);
+    }
+
+    protected void recvFail()
+    {
+
+    }
+
+    protected void recvInquire()
+    {
+
+    }
+
+    protected void recvYield()
+    {
+
+    }
 
 }

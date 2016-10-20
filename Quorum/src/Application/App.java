@@ -12,12 +12,22 @@ public class App {
     private ServerBase obServer;
     private int remainNumOfRequest;
 
+    private boolean APPROACH_REQUEST_IN_ORDER = false;
+
     public App(int arId)
     {
         nodeId = arId;
         obNode = Node.getNode(nodeId);
-        obServer = new ServerBase(nodeId);
         remainNumOfRequest = obNode.Total_Request;
+
+        if (APPROACH_REQUEST_IN_ORDER)
+        {
+            obServer = new ServerOrderRequest(nodeId);
+        }
+        else
+        {
+            obServer = new ServerPreemption(nodeId);
+        }
     }
     private void enterCS(double exeTime)
     {

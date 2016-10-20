@@ -1,6 +1,6 @@
 package Tool;
 
-import Application.ServerBase;
+import Application.ServerBase.ServerCallback;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,7 +27,7 @@ public class SocketManager {
             SocketManager.sendByTCP(arHostname, arPort, message);
         }
     }
-    public static void receive(int arPort, ServerBase server)
+    public static void receive(int arPort, ServerCallback server)
     {
         if (SOCKET_BY_SCTP)
         {
@@ -55,7 +55,7 @@ public class SocketManager {
             ex.printStackTrace();
         }
     }
-    private static void receiveByTCP(int arPort, ServerBase server)
+    private static void receiveByTCP(int arPort, ServerCallback server)
     {
         String message = "";
         try
@@ -72,7 +72,7 @@ public class SocketManager {
 
                 System.out.println("Receive: " + message);
                 if (server != null) {
-                    server.checkMessage(message);
+                    server.call(message);
                 }
             }
         }
@@ -85,7 +85,7 @@ public class SocketManager {
     {
 
     }
-    private static void receiveBySCTP(int arPort, ServerBase obj)
+    private static void receiveBySCTP(int arPort, ServerCallback obj)
     {
 
     }
