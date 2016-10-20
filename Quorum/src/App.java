@@ -8,53 +8,55 @@ public class App {
     private int nodeId;
     private Node obNode;
     private Server obServer;
+    private int remainNumOfRequest;
 
     App(int arId)
     {
         nodeId = arId;
         obNode = Node.getNode(nodeId);
         obServer = new Server(nodeId);
+        remainNumOfRequest = obNode.Total_Request;
     }
     public void enterCS(double exeTime)
     {
-        obServer.enterCS();     //TODO check actual enter, may wait here
-
-
+        obServer.enterCS(exeTime, this);     // pass exeTime, Server will callback leaveCS() once execute exeTime
     }
 
     public void leaveCS()
     {
-        obServer.leaveCS();
+        run();
     }
 
-    public void run() throws Exception
+    public void run()
     {
         // use case: after REQUEST_DELAY, call enterCS();
         //          when receive all reply stay in CS for CS_EXE_TIME, then call leaveCS()
         //          Loop above process Total_Request times.
 
-        Random rand = new Random();
-        double delayLambda = 1.0 / obNode.REQUEST_DELAY;
-        double exeLambda = 1.0 / obNode.CS_EXE_TIME;
-
-        for (int round = 0; round < obNode.Total_Request; round++)
+        if (remainNumOfRequest > 0)
         {
-            //double delay = Math.log(1 - rand.nextDouble()) / (-delayLambda);
-            double delay = 1;
-            //double exeTime = Math.log(1 - rand.nextDouble()) / (-exeLambda);
-            double exeTime = 5;
+            Random rand = new Random();
+            double delayLambda = 1.0 / obNode.REQUEST_DELAY;
+            double exeLambda = 1.0 / obNode.CS_EXE_TIME;
 
-            Thread.sleep((int) (1000 * delay));
+            double delay = Math.log(1 - rand.nextDouble()) / (-delayLambda);
+            double exeTime = Math.log(1 - rand.nextDouble()) / (-exeLambda);
+            //double delay = 1;
+            //double exeTime = 2;
+
+            try {
+                Thread.sleep((int) (1000 * delay));
+            }
+            catch (Exception e) {}
 
             enterCS(exeTime);      // stay at least CS_EXE_TIME
 
-            leaveCS();
-
+            remainNumOfRequest--;
         }
 
     }
 
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) {
 
         int nodeId = 1;         // TODO read from argument
         App app = new App(nodeId);

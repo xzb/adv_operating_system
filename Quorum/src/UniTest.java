@@ -33,49 +33,40 @@ public class UniTest {
         new Thread(client1).start();
     }
 
-    public static void appTest()
-    {
-
-    }
-
     public static void serverTest()
     {
-        /*
-        Runnable server0 = () -> {
-            Server server = new Server(0);
-            server.launch();
-        };
-        Runnable server1 = () -> {
-            Server server = new Server(1);
-            server.launch();
-        };
-        new Thread(server0).start();
-        new Thread(server1).start();
-        */
-
         // lamport time check
 
 
 
-
         // one process request C.S.
-        Server server0 = new Server(0);
-        Server server1 = new Server(1);
+        Server serverA = new Server(0);
+        Server serverB = new Server(1);
 
-        server0.enterCS();
+        serverA.enterCS(2, null);
         sleep(2);
-        server0.leaveCS();
+
+        // two process request C.S. with different ts, mutual exclusion
+        /*
+        serverA.enterCS(2, null);
+        serverB.enterCS(2, null);
         sleep(2);
-        server1.enterCS();
+        serverA.leaveCS();
         sleep(2);
-        server1.leaveCS();
-
-        // two process request C.S. with different ts
-
-
-
+        serverB.leaveCS();
+        */
 
     }
+
+    public static void appTest()
+    {
+
+        App appA = new App(0);
+        App appB = new App(1);
+
+        appA.run();
+    }
+
 
     public static void sleep(int second)
     {
@@ -90,9 +81,10 @@ public class UniTest {
 
         //nodeTest();
         //socketTest();
-        serverTest();
+        //serverTest();
+        appTest();
         assert true;
 
-        System.exit(0);
+        //System.exit(0);
     }
 }

@@ -9,6 +9,8 @@ import java.util.Set;
  */
 public class Server {
 
+    private boolean APPROACH_REQUEST_IN_ORDER = true;
+
     enum MESSAGE_TYPE {
         REQUEST("REQUEST"),
         GRANT("GRANT"),
@@ -32,6 +34,9 @@ public class Server {
     private long lamportTime;  	// increase each time of send or receive message
     private Set<Integer> permission_received_from_quorum;
     private PriorityQueue<long[]> requestQueue;              //<timestamp, id>
+
+    private double obExeTime;
+    private App obApp;
 
     public Server(int arNodeId)
     {
@@ -64,6 +69,7 @@ public class Server {
         };
         new Thread(launch).start();
     }
+
     public void checkMessage(String arMessage)
     {
         // fromNodeId; scalarTime; messageType
@@ -103,11 +109,14 @@ public class Server {
         }
     }
 
-    public void enterCS()	// add to queue, sendRequest
+    public void enterCS(double exeTime, App app)	// add to queue, sendRequest
     {
         // add to log file
         String log = nodeId + " request C.S. at lamportTime: " + lamportTime;
         Tool.FileIO.writeFile(log);
+
+        obExeTime = exeTime;
+        obApp = app;
 
         requestQueue.add(new long[]{lamportTime, nodeId});
         if (!locked && nodeId == requestQueue.peek()[1])
@@ -120,10 +129,18 @@ public class Server {
     private void actualEnterCS()
     {
         // add to log file
-        String log = nodeId + " enter C.S. at lamportTime: " + lamportTime;
+        String log = nodeId + " enter C.S. at lamportTime: " + lamportTime + ", exeTime: " + obExeTime;
         Tool.FileIO.writeFile(log);
+
+        // Sleep exeTime, then call leaveCS()
+        try {
+            Thread.sleep((int) (obExeTime * 1000));
+        }
+        catch (Exception e) {}
+
+        leaveCS();
     }
-    public void leaveCS()	// remove queue, sendRelease
+    private void leaveCS()	// remove queue, sendRelease
     {
         if (nodeId == (int)requestQueue.peek()[1])
         {
@@ -136,6 +153,11 @@ public class Server {
             permission_received_from_quorum.clear();
             requestQueue.remove();
             sendByType(MESSAGE_TYPE.RELEASE);
+
+            if (obApp != null)
+            {
+                obApp.leaveCS();
+            }
         }
     }
 
