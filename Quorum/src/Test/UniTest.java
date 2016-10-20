@@ -43,31 +43,26 @@ public class UniTest {
 
 
         // one process request C.S.
-        Server serverA = new Server(0);
-        Server serverB = new Server(1);
+        ServerBase serverA = new ServerBase(0);
+        ServerBase serverB = new ServerBase(1);
 
-        serverA.enterCS(2, null);
-        sleep(2);
+        serverA.enterCS(10, null);
+        sleep(1);
 
         // two process request C.S. with different ts, mutual exclusion
-        /*
-        serverA.enterCS(2, null);
+        //serverA.enterCS(2, null);     //deadlock
         serverB.enterCS(2, null);
-        sleep(2);
-        serverA.leaveCS();
-        sleep(2);
-        serverB.leaveCS();
-        */
+        sleep(1);
 
     }
 
     public static void appTest()
     {
-
         App appA = new App(0);
         App appB = new App(1);
 
-        appA.run();
+        appA.nextRequest();
+        //appB.nextRequest();
     }
 
 
@@ -84,8 +79,8 @@ public class UniTest {
 
         //nodeTest();
         //socketTest();
-        //serverTest();
-        appTest();
+        serverTest();
+        //appTest();
         assert true;
 
         //System.exit(0);

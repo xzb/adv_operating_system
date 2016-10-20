@@ -5,12 +5,11 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Set;
-//import com.sun.nio.sctp.*;
 
 /**
  * Created by xiezebin on 10/18/16.
  */
-public class Server {
+public class ServerBase {
 
     private boolean APPROACH_REQUEST_IN_ORDER = true;
 
@@ -39,9 +38,11 @@ public class Server {
     private PriorityQueue<long[]> requestQueue;              //<timestamp, id>
 
     private double obExeTime;
-    private App obApp;
+    private App.AppCallback obAppCallback;
 
-    public Server(int arNodeId)
+    public ServerBase()
+    {}
+    public ServerBase(int arNodeId)
     {
         nodeId = arNodeId;
         obNode = Node.getNode(nodeId);
@@ -112,14 +113,14 @@ public class Server {
         }
     }
 
-    public void enterCS(double exeTime, App app)	// add to queue, sendRequest
+    public void enterCS(double exeTime, App.AppCallback app)	// add to queue, sendRequest
     {
         // add to log file
         String log = nodeId + " request C.S. at lamportTime: " + lamportTime;
         Tool.FileIO.writeFile(log);
 
         obExeTime = exeTime;
-        obApp = app;
+        obAppCallback = app;
 
         requestQueue.add(new long[]{lamportTime, nodeId});
         if (!locked && nodeId == requestQueue.peek()[1])
@@ -143,7 +144,7 @@ public class Server {
 
         leaveCS();
     }
-    private void leaveCS()	// remove queue, sendRelease
+    private void leaveCS()	// remove queue, sendRelease, callback App
     {
         if (nodeId == (int)requestQueue.peek()[1])
         {
@@ -157,9 +158,9 @@ public class Server {
             requestQueue.remove();
             sendByType(MESSAGE_TYPE.RELEASE);
 
-            if (obApp != null)
+            if (obAppCallback != null)
             {
-                obApp.leaveCS();
+                obAppCallback.leaveCS();
             }
         }
     }
@@ -219,8 +220,17 @@ public class Server {
 
             if (!requestQueue.isEmpty()) {
                 long[] pair = requestQueue.peek();
+
                 locked = true;
-                sendByType(MESSAGE_TYPE.GRANT, (int) pair[1]);     // grant the next process
+                if (nodeId == pair[1])                                  // request for itself
+                {
+                    permission_received_from_quorum.add(nodeId);
+                    sendByType(MESSAGE_TYPE.REQUEST);
+                }
+                else
+                {
+                    sendByType(MESSAGE_TYPE.GRANT, (int) pair[1]);     // grant the next process
+                }
             }
         }
     }

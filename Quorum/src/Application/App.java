@@ -9,27 +9,32 @@ public class App {
 
     private int nodeId;
     private Node obNode;
-    private Server obServer;
+    private ServerBase obServer;
     private int remainNumOfRequest;
 
     public App(int arId)
     {
         nodeId = arId;
         obNode = Node.getNode(nodeId);
-        obServer = new Server(nodeId);
+        obServer = new ServerBase(nodeId);
         remainNumOfRequest = obNode.Total_Request;
     }
-    public void enterCS(double exeTime)
+    private void enterCS(double exeTime)
     {
-        obServer.enterCS(exeTime, this);     // pass exeTime, Server will callback leaveCS() once execute exeTime
+        // pass exeTime, Server will callback App's leaveCS() and continue next request
+        obServer.enterCS(exeTime, new AppCallback() {
+            @Override
+            public void leaveCS() {
+                nextRequest();
+            }
+        });
     }
 
-    public void leaveCS()
-    {
-        run();
+    public interface AppCallback {
+        void leaveCS();
     }
 
-    public void run()
+    public void nextRequest()
     {
         // use case: after REQUEST_DELAY, call enterCS();
         //          when receive all reply stay in CS for CS_EXE_TIME, then call leaveCS()
@@ -43,8 +48,6 @@ public class App {
 
             double delay = Math.log(1 - rand.nextDouble()) / (-delayLambda);
             double exeTime = Math.log(1 - rand.nextDouble()) / (-exeLambda);
-            //double delay = 1;
-            //double exeTime = 2;
 
             try {
                 Thread.sleep((int) (1000 * delay));
@@ -56,14 +59,6 @@ public class App {
             remainNumOfRequest--;
         }
 
-    }
-
-    public static void main(String[] args) {
-
-        int nodeId = 1;         // TODO read from argument
-        App app = new App(nodeId);
-
-        app.run();
     }
 
 
