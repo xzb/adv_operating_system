@@ -135,30 +135,32 @@ public class ServerBase {
         obAppCallback = app;
 
         requestQueue.add(new long[]{lamportTime, nodeId});
-        if (!locked && nodeId == requestQueue.peek()[1])
-        {
-            locked = true;                                  // update locked
-            permission_received_from_quorum.add(nodeId);
-            sendByType(MESSAGE_TYPE.REQUEST);
-        }
+        handleRequestQueue();
 
-        // TODO if is locked, can still send Request
+        // if is locked, can still send Request
+        sendByType(MESSAGE_TYPE.REQUEST);
     }
     protected void actualEnterCS()
     {
-        actualInCS = true;
+        // should not stop server receiving
+        Runnable event = () -> {
 
-        // add to log file
-        String log = nodeId + " enter C.S. at lamportTime: " + lamportTime + ", exeTime: " + obExeTime;
-        Tool.FileIO.writeFile(log);
+            actualInCS = true;
 
-        // Sleep exeTime, then call leaveCS()
-        try {
-            Thread.sleep((int) (obExeTime * 1000));
-        }
-        catch (Exception e) {}
+            // add to log file
+            String log = nodeId + " enter C.S. at lamportTime: " + lamportTime + ", exeTime: " + obExeTime;
+            Tool.FileIO.writeFile(log);
 
-        leaveCS();
+            // Sleep exeTime, then call leaveCS()
+            try {
+                Thread.sleep((int) (obExeTime * 1000));
+            } catch (Exception e) {
+            }
+
+            leaveCS();
+
+        };
+        new Thread(event).start();
     }
     private void leaveCS()	// remove queue, sendRelease, callback App
     {
@@ -174,11 +176,32 @@ public class ServerBase {
             locked = false;                                 // update locked
             permission_received_from_quorum.clear();
             requestQueue.remove();
-            sendByType(MESSAGE_TYPE.RELEASE);               // TODO grant previous request here
+            sendByType(MESSAGE_TYPE.RELEASE);
+
+            handleRequestQueue();                           // grant previous request here
 
             if (obAppCallback != null)
             {
                 obAppCallback.leaveCS();
+            }
+        }
+    }
+
+    protected void handleRequestQueue()
+    {
+        if (!locked && !requestQueue.isEmpty()) {
+            int reqId = (int) requestQueue.peek()[1];
+
+            locked = true;
+            if (nodeId == reqId)
+            {
+                permission_received_from_quorum.add(nodeId);    // grant itself
+                //sendByType(MESSAGE_TYPE.REQUEST);             // request already sent
+            }
+            else
+            {
+                nodeLastGrant = reqId;
+                sendByType(MESSAGE_TYPE.GRANT, reqId);          // grant the next process
             }
         }
     }
@@ -217,12 +240,7 @@ public class ServerBase {
     {
         requestQueue.add(new long[]{scalaTime, fromNodeId});
 
-        if (!locked && fromNodeId == (int)requestQueue.peek()[1])
-        {
-            locked = true;
-            nodeLastGrant = fromNodeId;
-            sendByType(MESSAGE_TYPE.GRANT, fromNodeId);
-        }
+        handleRequestQueue();
     }
     protected void recvGrant(int fromNodeId)
     {
@@ -234,26 +252,12 @@ public class ServerBase {
     }
     private void recvRelease(int fromNodeId)
     {
-        if (fromNodeId == (int)requestQueue.peek()[1])                  // TODO may not on top of queue
+        if (fromNodeId == (int)requestQueue.peek()[1])                  // TODO may not on top of queue, should check previous grant
         {
             locked = false;
             requestQueue.remove();              // should remove top
 
-            if (!requestQueue.isEmpty()) {
-                int reqId = (int) requestQueue.peek()[1];
-
-                locked = true;
-                if (nodeId == reqId)                                  // request for itself
-                {
-                    permission_received_from_quorum.add(nodeId);
-                    sendByType(MESSAGE_TYPE.REQUEST);
-                }
-                else
-                {
-                    nodeLastGrant = reqId;
-                    sendByType(MESSAGE_TYPE.GRANT, reqId);     // grant the next process
-                }
-            }
+            handleRequestQueue();
         }
     }
 

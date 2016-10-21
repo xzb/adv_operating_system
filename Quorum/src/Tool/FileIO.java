@@ -9,7 +9,7 @@ import java.io.IOException;
  */
 public class FileIO {
 
-    private static String resultFile = "result.txt";
+    private static String resultFile = "log.txt";
 
     public static void writeFile(String arContent)
     {
