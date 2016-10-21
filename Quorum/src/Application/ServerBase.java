@@ -166,24 +166,30 @@ public class ServerBase {
     {
         actualInCS = false;
 
-        if (nodeId == (int)requestQueue.peek()[1])          // TODO may not on top of queue
+        // add to log file
+        String log = nodeId + " leave C.S. at lamportTime: " + lamportTime;
+        Tool.FileIO.writeFile(log);
+
+        locked = false;                                 // update locked
+        permission_received_from_quorum.clear();
+
+        long[] removeEntry = null;
+        for(long[] entry : requestQueue)
         {
-            // add to log file
-            String log = nodeId + " leave C.S. at lamportTime: " + lamportTime;
-            Tool.FileIO.writeFile(log);
-
-
-            locked = false;                                 // update locked
-            permission_received_from_quorum.clear();
-            requestQueue.remove();
-            sendByType(MESSAGE_TYPE.RELEASE);
-
-            handleRequestQueue();                           // grant previous request here
-
-            if (obAppCallback != null)
+            if (entry[1] == nodeId)
             {
-                obAppCallback.leaveCS();
+                removeEntry = entry;
+                break;
             }
+        }
+        requestQueue.remove(removeEntry);               // should remove related entry
+
+        sendByType(MESSAGE_TYPE.RELEASE);
+        handleRequestQueue();                           // grant previous request here
+
+        if (obAppCallback != null)
+        {
+            obAppCallback.leaveCS();
         }
     }
 
@@ -196,7 +202,6 @@ public class ServerBase {
             if (nodeId == reqId)
             {
                 permission_received_from_quorum.add(nodeId);    // grant itself
-                //sendByType(MESSAGE_TYPE.REQUEST);             // request already sent
             }
             else
             {
@@ -252,10 +257,20 @@ public class ServerBase {
     }
     private void recvRelease(int fromNodeId)
     {
-        if (fromNodeId == (int)requestQueue.peek()[1])                  // TODO may not on top of queue, should check previous grant
+        if (fromNodeId == nodeLastGrant)            // may not on top of queue, should check previous grant
         {
             locked = false;
-            requestQueue.remove();              // should remove top
+
+            long[] removeEntry = null;
+            for(long[] entry : requestQueue)
+            {
+                if (entry[1] == fromNodeId)
+                {
+                    removeEntry = entry;
+                    break;
+                }
+            }
+            requestQueue.remove(removeEntry);       // should remove related entry
 
             handleRequestQueue();
         }
