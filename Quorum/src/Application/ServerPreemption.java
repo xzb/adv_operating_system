@@ -92,20 +92,10 @@ public class ServerPreemption extends ServerBase {
 
     protected void recvYield(int fromNodeId)
     {
-        int reqId = (int) requestQueue.peek()[1];
-
-        if (nodeId == reqId)
-        {
-            permission_received_from_quorum.add(nodeId);
-            if (permission_received_from_quorum.equals(obNode.qset))
-            {
-                actualEnterCS();
-            }
-        }
-        else
-        {
-            nodeLastGrant = reqId;
-            sendByType(MESSAGE_TYPE.GRANT, reqId);
+        if (nodeLastGrant == fromNodeId)                    // permission inquired back
+        {                                                   // same as receive Release, but not remove entry in queue
+            locked = false;
+            handleRequestQueue();
         }
     }
 

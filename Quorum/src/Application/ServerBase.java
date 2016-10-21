@@ -202,6 +202,10 @@ public class ServerBase {
             if (nodeId == reqId)
             {
                 permission_received_from_quorum.add(nodeId);    // grant itself
+                if (permission_received_from_quorum.equals(obNode.qset))
+                {
+                    actualEnterCS();                            // if Release or Yield message is the last permission that need to enter CS
+                }
             }
             else
             {
