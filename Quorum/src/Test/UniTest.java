@@ -40,20 +40,25 @@ public class UniTest {
     {
         // lamport time check
 
-
-
-        // one process request C.S.
+        // two server running
         ServerBase serverA = new ServerBase(0);
         ServerBase serverB = new ServerBase(1);
 
+        // first process request
         serverA.enterCS(10, null);
         sleep(1);
 
-        // two process request C.S. with different ts, mutual exclusion
-        //serverA.enterCS(2, null);     //deadlock
+        // second process request
         serverB.enterCS(2, null);
-        sleep(1);
+    }
 
+    public static void serverPreemptionTest()
+    {
+        ServerBase serverA = new ServerPreemption(0);
+        ServerBase serverB = new ServerPreemption(1);
+
+        serverA.enterCS(2, null);
+        serverB.enterCS(2, null);
     }
 
     public static void appTest()
@@ -80,6 +85,7 @@ public class UniTest {
         //nodeTest();
         //socketTest();
         serverTest();
+        //serverPreemptionTest();
         //appTest();
         assert true;
 

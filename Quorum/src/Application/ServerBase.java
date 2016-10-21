@@ -28,21 +28,25 @@ public class ServerBase {
         }
     }
 
-    private int nodeId;
-    private Node obNode;
-    private boolean locked;
-    private long lamportTime;  	// increase each time of send or receive message
-    private Set<Integer> permission_received_from_quorum;
-    private PriorityQueue<long[]> requestQueue;              //<timestamp, id>
+    protected int nodeId;
+    protected Node obNode;
+    protected boolean locked;
+    protected boolean actualInCS;   // for discarding inquire
+    protected int nodeLastGrant;    // save the node last granted, only need to inquire this node if needed
+    private long lamportTime;       // increase each time of send or receive message
+    protected Set<Integer> permission_received_from_quorum;
+    protected PriorityQueue<long[]> requestQueue;              //<timestamp, id>
 
-    private double obExeTime;
-    private App.AppCallback obAppCallback;
+    protected double obExeTime;
+    protected App.AppCallback obAppCallback;
 
     public ServerBase(int arNodeId)
     {
         nodeId = arNodeId;
         obNode = Node.getNode(nodeId);
         locked = false;
+        actualInCS = false;
+        nodeLastGrant = -1;
         lamportTime = 0;
         permission_received_from_quorum = new HashSet<>();
 
@@ -90,6 +94,10 @@ public class ServerBase {
         {
             lamportTime = scalarTime + 1;
         }
+        else
+        {
+            lamportTime++;                      // record receive event
+        }
 
         if (mType.equals(MESSAGE_TYPE.REQUEST.getTitle()))
         {
@@ -105,15 +113,15 @@ public class ServerBase {
         }
         else if (mType.equals(MESSAGE_TYPE.FAIL.getTitle()))
         {
-            recvFail();
+            recvFail(fromNodeId);
         }
         else if (mType.equals(MESSAGE_TYPE.INQUIRE.getTitle()))
         {
-            recvInquire();
+            recvInquire(fromNodeId);
         }
         else if (mType.equals(MESSAGE_TYPE.YIELD.getTitle()))
         {
-            recvYield();
+            recvYield(fromNodeId);
         }
     }
 
@@ -133,9 +141,13 @@ public class ServerBase {
             permission_received_from_quorum.add(nodeId);
             sendByType(MESSAGE_TYPE.REQUEST);
         }
+
+        // TODO if is locked, can still send Request
     }
-    private void actualEnterCS()
+    protected void actualEnterCS()
     {
+        actualInCS = true;
+
         // add to log file
         String log = nodeId + " enter C.S. at lamportTime: " + lamportTime + ", exeTime: " + obExeTime;
         Tool.FileIO.writeFile(log);
@@ -150,7 +162,9 @@ public class ServerBase {
     }
     private void leaveCS()	// remove queue, sendRelease, callback App
     {
-        if (nodeId == (int)requestQueue.peek()[1])
+        actualInCS = false;
+
+        if (nodeId == (int)requestQueue.peek()[1])          // TODO may not on top of queue
         {
             // add to log file
             String log = nodeId + " leave C.S. at lamportTime: " + lamportTime;
@@ -160,7 +174,7 @@ public class ServerBase {
             locked = false;                                 // update locked
             permission_received_from_quorum.clear();
             requestQueue.remove();
-            sendByType(MESSAGE_TYPE.RELEASE);
+            sendByType(MESSAGE_TYPE.RELEASE);               // TODO grant previous request here
 
             if (obAppCallback != null)
             {
@@ -173,9 +187,8 @@ public class ServerBase {
      * send message logic
      *********************************************/
     // broadcast to every quorum
-    private void sendByType(MESSAGE_TYPE arType)
+    protected void sendByType(MESSAGE_TYPE arType)
     {
-        lamportTime++;
         Set<Integer> quorumSet = obNode.qset;
         for(int qid : quorumSet)
         {
@@ -184,30 +197,34 @@ public class ServerBase {
             Node qNode = Node.getNode(qid);
             SocketManager.send(qNode.hostname, qNode.port, nodeId, lamportTime, arType.getTitle());
         }
+
+        lamportTime++;                  // increment after send, piggyback old value
     }
     // send to one quorum
-    private void sendByType(MESSAGE_TYPE arType, int dstNodeId)
+    protected void sendByType(MESSAGE_TYPE arType, int dstNodeId)
     {
-        lamportTime++;
         Node qNode = Node.getNode(dstNodeId);
         SocketManager.send(qNode.hostname, qNode.port, nodeId, lamportTime, arType.getTitle());
+
+        lamportTime++;
     }
 
 
     /*********************************************
      * receive message logic
      *********************************************/
-    private void recvRequest(long scalaTime, int fromNodeId)
+    protected void recvRequest(long scalaTime, int fromNodeId)
     {
         requestQueue.add(new long[]{scalaTime, fromNodeId});
 
         if (!locked && fromNodeId == (int)requestQueue.peek()[1])
         {
             locked = true;
+            nodeLastGrant = fromNodeId;
             sendByType(MESSAGE_TYPE.GRANT, fromNodeId);
         }
     }
-    private void recvGrant(int fromNodeId)
+    protected void recvGrant(int fromNodeId)
     {
         permission_received_from_quorum.add(fromNodeId);
         if (permission_received_from_quorum.equals(obNode.qset))
@@ -217,23 +234,24 @@ public class ServerBase {
     }
     private void recvRelease(int fromNodeId)
     {
-        if (fromNodeId == (int)requestQueue.peek()[1])
+        if (fromNodeId == (int)requestQueue.peek()[1])                  // TODO may not on top of queue
         {
             locked = false;
             requestQueue.remove();              // should remove top
 
             if (!requestQueue.isEmpty()) {
-                long[] pair = requestQueue.peek();
+                int reqId = (int) requestQueue.peek()[1];
 
                 locked = true;
-                if (nodeId == pair[1])                                  // request for itself
+                if (nodeId == reqId)                                  // request for itself
                 {
                     permission_received_from_quorum.add(nodeId);
                     sendByType(MESSAGE_TYPE.REQUEST);
                 }
                 else
                 {
-                    sendByType(MESSAGE_TYPE.GRANT, (int) pair[1]);     // grant the next process
+                    nodeLastGrant = reqId;
+                    sendByType(MESSAGE_TYPE.GRANT, reqId);     // grant the next process
                 }
             }
         }
@@ -242,8 +260,8 @@ public class ServerBase {
     /*********************************************
      * preemption logic
      *********************************************/
-    protected void recvFail(){}
-    protected void recvInquire(){}
-    protected void recvYield(){}
+    protected void recvFail(int fromNodeId){}
+    protected void recvInquire(int fromNodeId){}
+    protected void recvYield(int fromNodeId){}
 
 }
