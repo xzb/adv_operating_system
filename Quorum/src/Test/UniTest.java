@@ -67,7 +67,7 @@ public class UniTest {
         App appB = new App(1);
 
         appA.nextRequest();
-        //appB.nextRequest();
+        appB.nextRequest();
     }
 
 
@@ -84,9 +84,9 @@ public class UniTest {
 
         //nodeTest();
         //socketTest();
-        serverTest();
+        //serverTest();
         //serverPreemptionTest();
-        //appTest();
+        appTest();
         assert true;
 
         //System.exit(0);

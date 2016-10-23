@@ -34,11 +34,21 @@ public class ServerPreemption extends ServerBase {
             if (!locked)
             {
                 locked = true;
+                nodeLastGrant = fromNodeId;
                 sendByType(MESSAGE_TYPE.GRANT, fromNodeId);
             }
             else            // received timestamp is on top of queue, need to Inquire
             {
-                sendByType(MESSAGE_TYPE.INQUIRE, nodeLastGrant);           // TODO send Inquire to one of the membership set
+                if (nodeLastGrant != nodeId)
+                {
+                    sendByType(MESSAGE_TYPE.INQUIRE, nodeLastGrant);           // send Inquire to one of the membership set
+                }
+                else        // has grant itself before
+                {
+                    permission_received_from_quorum.remove(nodeId);
+                    nodeLastGrant = fromNodeId;
+                    sendByType(MESSAGE_TYPE.GRANT, fromNodeId);
+                }
             }
         }
         else                // received timestamp is not on top of queue, reply Fail

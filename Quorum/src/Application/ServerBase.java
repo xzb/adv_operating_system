@@ -197,6 +197,7 @@ public class ServerBase {
     {
         if (!locked && !requestQueue.isEmpty()) {
             int reqId = (int) requestQueue.peek()[1];
+            nodeLastGrant = reqId;
 
             locked = true;
             if (nodeId == reqId)
@@ -209,7 +210,6 @@ public class ServerBase {
             }
             else
             {
-                nodeLastGrant = reqId;
                 sendByType(MESSAGE_TYPE.GRANT, reqId);          // grant the next process
             }
         }
