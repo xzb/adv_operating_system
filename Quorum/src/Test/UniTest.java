@@ -65,9 +65,13 @@ public class UniTest {
     {
         App appA = new App(0);
         App appB = new App(1);
+        //App appC = new App(2);
+        //App appD = new App(3);
 
         appA.nextRequest();
         appB.nextRequest();
+        //appC.nextRequest();
+        //appD.nextRequest();
     }
 
 
@@ -86,8 +90,9 @@ public class UniTest {
         //socketTest();
         //serverTest();
         //serverPreemptionTest();
+
         appTest();
-        assert true;
+        //TestCorrectness.checkLog();
 
         //System.exit(0);
     }

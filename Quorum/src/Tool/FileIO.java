@@ -1,8 +1,6 @@
 package Tool;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * Created by xiezebin on 10/19/16.
@@ -26,5 +24,30 @@ public class FileIO {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void readFile(readLineCallback callback)
+    {
+        String str="";
+        try{
+            FileReader fr = new FileReader(resultFile);
+            BufferedReader bfr= new BufferedReader(fr);
+
+            while((str = bfr.readLine()) != null)
+            {
+                if (callback != null)
+                {
+                    callback.call(str);
+                }
+                //System.out.println(str);
+            }
+            bfr.close();
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public interface readLineCallback {
+        void call(String line);
     }
 }
