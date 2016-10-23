@@ -283,7 +283,10 @@ public class ServerBase {
     /*********************************************
      * preemption logic
      *********************************************/
-    protected void recvFail(int fromNodeId){}
+    protected void recvFail(int fromNodeId){
+
+
+    }
     protected void recvInquire(int fromNodeId){}
     protected void recvYield(int fromNodeId){}
 
