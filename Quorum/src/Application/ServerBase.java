@@ -274,7 +274,7 @@ public class ServerBase {
             actualEnterCS();                    // actually enter CS after receive grant from all
         }
     }
-    private void recvRelease(int fromNodeId)
+    protected void recvRelease(int fromNodeId)
     {
         if (fromNodeId == nodeLastGrant)            // may not on top of queue, should check previous grant
         {

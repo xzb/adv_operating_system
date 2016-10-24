@@ -31,6 +31,19 @@ public class SocketManager {
             SocketManager.sendByTCP(arHostname, arPort, message);
         }
     }
+    public static void send(String arHostname, int arPort, int fromNodeId, String arMsg) {
+        //System.out.println("#SEND " + arHostname + ";" + arPort + ";" + arMsg + ";");
+        String message = fromNodeId + ";"  + arMsg;
+        if (SOCKET_BY_SCTP) {
+            SocketManager.sendBySCTP(arHostname, arPort, message);
+        } else {
+            SocketManager.sendByTCP(arHostname, arPort, message);
+        }
+    }
+
+
+
+
 
     public static void receive(int arPort, ServerCallback server) {
         if (SOCKET_BY_SCTP) {
