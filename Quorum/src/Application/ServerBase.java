@@ -82,6 +82,10 @@ public class ServerBase {
     public interface ServerCallback {
         void call(String message);
     }
+    
+	/*********************************************
+     * when receive message, check type and dispatch event
+     *********************************************/
     private void checkMessage(String arMessage)
     {
         // fromNodeId; scalarTime; messageType
@@ -125,6 +129,9 @@ public class ServerBase {
         }
     }
 
+	/*********************************************
+     * enterCS, leaveCS: interactive function with App
+     *********************************************/
     public void enterCS(double exeTime, App.AppCallback app)	// add to queue, sendRequest
     {
         // add to log file
@@ -193,6 +200,9 @@ public class ServerBase {
         }
     }
 
+    /*********************************************
+     * handle requeue queue each time when queue content change
+     *********************************************/
     protected void handleRequestQueue()
     {
         if (!locked && !requestQueue.isEmpty()) {

@@ -107,7 +107,7 @@ public class SocketManager {
         }
     }
 
-    private static void receiveBySCTP(int arPort, ServerCallback obj) {
+    private static void receiveBySCTP(int arPort, ServerCallback server) {
         try{
         String message="";
             /***
@@ -142,6 +142,11 @@ public class SocketManager {
             while ((sctpChannel = sctpServerChannel.accept()) != null) {
                 MessageInfo messageInfo = sctpChannel.receive(ByteBuffer.allocate(64000) , null, null);
                 message=messageInfo.toString();
+
+                System.out.println("Receive: " + message);
+                if (server != null) {
+                    server.call(message);
+                }
             }
 
             } catch (IOException e) {
