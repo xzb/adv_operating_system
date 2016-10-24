@@ -16,9 +16,15 @@ public class TestCorrectness {
     public static boolean checkLog()
     {
         currentProcessInCS = null;
-        numsEnterCS = new HashMap<>();
+        numsEnterCS = new HashMap<String, Integer>();
 
-        FileIO.readLineCallback callback = line -> processLineOfLog(line);
+        FileIO.readLineCallback callback = new FileIO.readLineCallback() {
+            @Override
+            public void call(String line) {
+                processLineOfLog(line);
+            }
+        };
+
         FileIO.readFile(callback);
 
         for (Map.Entry<String, Integer> entry : numsEnterCS.entrySet())
@@ -60,6 +66,10 @@ public class TestCorrectness {
             }
             currentProcessInCS = null;
         }
+    }
+
+    public static void main(String[] args) {
+        checkLog();
     }
 
 }

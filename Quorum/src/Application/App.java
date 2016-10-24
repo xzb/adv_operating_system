@@ -71,5 +71,26 @@ public class App {
 
     }
 
+    public static void main(String[] args) {
+        if (args.length < 1)
+        {
+            System.out.println("Please enter node id.");
+            System.exit(1);
+        }
+
+        // launch server
+        App app = new App(Integer.valueOf(args[0]));
+
+        // wait 20 seconds to let all servers ready
+        try {
+            Thread.sleep(20 * 1000);
+        }
+        catch (Exception e)
+        {
+        }
+
+        // start request events
+        app.nextRequest();
+    }
 
 }

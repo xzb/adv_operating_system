@@ -14,8 +14,8 @@ public class ServerPreemption extends ServerBase {
     public ServerPreemption(int arNodeId)
     {
         super(arNodeId);
-        failReceived = new HashSet<>();
-        inquireReceived = new HashSet<>();
+        failReceived = new HashSet<Integer>();
+        inquireReceived = new HashSet<Integer>();
     }
 
     protected void actualEnterCS()

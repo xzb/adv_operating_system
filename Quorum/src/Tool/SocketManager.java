@@ -1,7 +1,6 @@
 package Tool;
 
 import Application.ServerBase.ServerCallback;
-import com.sun.corba.se.impl.javax.rmi.CORBA.Util;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpServerChannel;
 
@@ -12,27 +11,16 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.io.IOException;
-import java.util.Set;
-import java.util.Iterator;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.nio.ByteBuffer;
-import com.sun.nio.sctp.Association;
-import com.sun.nio.sctp.InvalidStreamException;
 import com.sun.nio.sctp.MessageInfo;
-import com.sun.nio.sctp.SctpMultiChannel;
-import static java.lang.System.out;
-import static java.lang.System.err;
 
 
 /**
  * Created on xiezebin 10/18/16.
  */
 public class SocketManager {
-    private final static boolean SOCKET_BY_SCTP = true;
+    private final static boolean SOCKET_BY_SCTP = false;
 
     public static void send(String arHostname, int arPort, int fromNodeId, long scalarTime, String arMsg) {
         //System.out.println("#SEND " + arHostname + ";" + arPort + ";" + arMsg + ";");

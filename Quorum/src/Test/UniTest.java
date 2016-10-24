@@ -22,15 +22,19 @@ public class UniTest {
 
     public static void socketTest()
     {
-        Runnable server1 = () -> {
-            Node node = new Node(0);
-            SocketManager.receive(node.port, null);
-        };
-        Runnable client1 = () -> {
-            int srcId = 1;
-            Node dst = new Node(0);
-            SocketManager.send(dst.hostname, dst.port, srcId, 10, "test message.");
-        };
+        Runnable server1 = new Runnable() {
+            @Override
+            public void run() {
+                Node node = new Node(0);
+                SocketManager.receive(node.port, null);
+        }};
+        Runnable client1 = new Runnable() {
+            @Override
+            public void run() {
+                int srcId = 1;
+                Node dst = new Node(0);
+                SocketManager.send(dst.hostname, dst.port, srcId, 10, "test message.");
+        }};
 
         new Thread(server1).start();
         new Thread(client1).start();

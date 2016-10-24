@@ -48,7 +48,7 @@ public class ServerBase {
         actualInCS = false;
         nodeLastGrant = -1;
         lamportTime = 0;
-        permission_received_from_quorum = new HashSet<>();
+        permission_received_from_quorum = new HashSet<Integer>();
 
         Comparator<long[]> com = new Comparator<long[]>() {
             @Override
@@ -61,20 +61,23 @@ public class ServerBase {
                     return (int) (o1[1] - o2[1]);   //de-tier by id
             }
         };
-        requestQueue = new PriorityQueue<>(com);
+        requestQueue = new PriorityQueue<long[]>(10, com);
 
         launch();
     }
     private void launch()	// receive all message, update time when necessary, call Client.send()
                             // check message, call recvGrant(), recvFail(), recvInquire(), recvYield()
     {
-        Runnable launch = () -> {
-            SocketManager.receive(obNode.port, new ServerCallback() {
-                @Override
-                public void call(String message) {
-                    checkMessage(message);
-                }
-            });
+        Runnable launch = new Runnable() {
+            @Override
+            public void run() {
+                SocketManager.receive(obNode.port, new ServerCallback() {
+                    @Override
+                    public void call(String message) {
+                        checkMessage(message);
+                    }
+                });
+            }
         };
         new Thread(launch).start();
     }
@@ -150,22 +153,24 @@ public class ServerBase {
     protected void actualEnterCS()
     {
         // should not stop server receiving
-        Runnable event = () -> {
+        Runnable event = new Runnable() {
+            @Override
+            public void run() {
 
-            actualInCS = true;
+                actualInCS = true;
 
-            // add to log file
-            String log = nodeId + " enter C.S. at lamportTime: " + lamportTime + ", exeTime: " + obExeTime;
-            Tool.FileIO.writeFile(log);
+                // add to log file
+                String log = nodeId + " enter C.S. at lamportTime: " + lamportTime + ", exeTime: " + obExeTime;
+                Tool.FileIO.writeFile(log);
 
-            // Sleep exeTime, then call leaveCS()
-            try {
-                Thread.sleep((int) (obExeTime * 1000));
-            } catch (Exception e) {
+                // Sleep exeTime, then call leaveCS()
+                try {
+                    Thread.sleep((int) (obExeTime * 1000));
+                } catch (Exception e) {
+                }
+
+                leaveCS();
             }
-
-            leaveCS();
-
         };
         new Thread(event).start();
     }
@@ -293,10 +298,7 @@ public class ServerBase {
     /*********************************************
      * preemption logic
      *********************************************/
-    protected void recvFail(int fromNodeId){
-
-
-    }
+    protected void recvFail(int fromNodeId){}
     protected void recvInquire(int fromNodeId){}
     protected void recvYield(int fromNodeId){}
 

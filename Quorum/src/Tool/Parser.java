@@ -3,6 +3,7 @@ package Tool;
  * Created by yxl154630 on 10/18/16.
  */
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,9 +38,11 @@ public class Parser {
         parse();
     }
     void parse() {
-        Path path = Paths.get(config);
-        try (BufferedReader in = Files.newBufferedReader(path)
-        ) {
+        try
+         {
+            FileReader fr = new FileReader(config);
+            BufferedReader in = new BufferedReader(fr);
+
             //System.out.println(in);
             String[] tmp = skipLines(in).split(" ");
             this.allNodes=Integer.parseInt(tmp[0]);
@@ -50,8 +53,8 @@ public class Parser {
             this.hostName=new String[allNodes];
             this.numPort=new int[allNodes];
             //1016 addition
-            this.ms=new HashMap<>();
-            this.qs=new HashMap<>();
+            this.ms=new HashMap<Integer,HashSet<Integer>>();
+            this.qs=new HashMap<Integer,HashSet<Integer>>();
 
 
 
@@ -60,8 +63,8 @@ public class Parser {
                 String[] tmp2 = skipLines(in).split(" ");
                 hostName[i] = tmp2[1];
                 numPort[i] = Integer.parseInt(tmp2[2].replaceAll(" ",""));
-                HashSet<Integer> sett1=new HashSet<>();
-                HashSet<Integer> sett2=new HashSet<>();
+                HashSet<Integer> sett1=new HashSet<Integer>();
+                HashSet<Integer> sett2=new HashSet<Integer>();
                 qs.put(i,sett1);
                 ms.put(i,sett2);
 
