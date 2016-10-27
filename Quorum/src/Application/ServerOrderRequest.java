@@ -1,6 +1,7 @@
 package Application;
 
 import Tool.SocketManager;
+import sun.jvm.hotspot.oops.Array;
 import sun.jvm.hotspot.runtime.Threads;
 
 import java.util.*;
@@ -31,9 +32,13 @@ public class ServerOrderRequest extends ServerBase {
     protected App.AppCallback obAppCallback;
     private Set<Integer> qSet;
     private  Set<Integer> mSet;
+    private ArrayList<Integer> qSet1;
+    private ArrayList<Integer> mSet1;
 private Queue<Integer> reQueue;
-    private boolean[] checkGrant;
+  //  private boolean[] checkGrant;
     boolean lock;
+    protected int index=0;
+    //private Comparator compa;
 
 
     public ServerOrderRequest(int arNodeId)
@@ -41,7 +46,24 @@ private Queue<Integer> reQueue;
        super(arNodeId);
         qSet=super.obNode.qset;
         mSet=super.obNode.mset;
-        checkGrant=new boolean[qSet.size()];
+        qSet1=new ArrayList<>();
+        mSet1=new ArrayList<>();
+        for(int i:qSet){
+            qSet1.add(i);
+        }
+        for(int i:mSet){
+            mSet1.add(i);
+        }
+
+
+
+
+        Collections.sort(qSet1);
+        Collections.sort(mSet1);
+
+
+
+        //checkGrant=new boolean[qSet.size()];
         this.lock=false;
 
         launch();
@@ -73,7 +95,7 @@ private Queue<Integer> reQueue;
 
 
 
-    private void checkMessage(String arMessage){
+    protected void checkMessage(String arMessage){
         String[] parts = arMessage.split(";");
         int fromNodeId = Integer.valueOf(parts[0]);
       //  long scalarTime = Long.valueOf(parts[1]);
@@ -100,22 +122,13 @@ private Queue<Integer> reQueue;
 
     //===========
     private void sendRequest(int lastId){
-        Set<Integer> quorumSet = obNode.qset;           //TODO 可以改成挨个删除？
-        int i=0;
-        int nextId=0;
-        Iterator it = quorumSet.iterator();
-        while(!it.equals(lastId)&&it.hasNext()){
-            it.next();
-            i++;
-        }
-        if(it.equals(lastId)){
+             //TODO 可以改成挨个删除？
 
-            nextId= (int) it.next();
-        }
-        Node qNode = Node.getNode(nextId);
-       if(checkGrant[i]){
-           SocketManager.send(qNode.hostname, qNode.port, nodeId,  "REQUEST");
-       }
+        int nextId=qSet1.get(index);
+        Node qNode=Node.getNode(nextId);
+
+        SocketManager.send(qNode.hostname, qNode.port, nodeId,  "REQUEST");
+
 
 
     }
@@ -176,14 +189,26 @@ private Queue<Integer> reQueue;
 
     private void firstRequest(){
 
-
+      index=0;
         lock=true;
-        for(int i:qSet){
-            sendFirst(i);
-            break;
-        }
-    }
+        sendFirst(qSet1.get(index));
 
+    }
+    public void enterCS(double exeTime, App.AppCallback app)	// add to queue, sendRequest
+    {
+        // add to log file
+        String log = nodeId + " request C.S.  " ;
+        Tool.FileIO.writeFile(log);
+
+        obExeTime = exeTime;
+        obAppCallback = app;
+
+        reQueue.add(nodeId);
+        handleRequest();
+
+        // if is locked, can still send Request
+        firstRequest();
+    }
 
 
 
@@ -210,6 +235,7 @@ private Queue<Integer> reQueue;
         }
         else
         sendRequest(fromNodeId);
+        index++;
 
     }
     protected void recvRelease(int fromNodeId)
