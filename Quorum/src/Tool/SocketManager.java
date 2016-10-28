@@ -23,7 +23,7 @@ public class SocketManager {
     private final static boolean SOCKET_BY_SCTP = false;
 
     public static void send(String arHostname, int arPort, int fromNodeId, long scalarTime, String arMsg) {
-        //System.out.println("#SEND " + arHostname + ";" + arPort + ";" + arMsg + ";");
+        //System.out.println(fromNodeId+" send :" + arMsg + ";");
         String message = fromNodeId + ";" + scalarTime + ";" + arMsg;
         if (SOCKET_BY_SCTP) {
             SocketManager.sendBySCTP(arHostname, arPort, message);
@@ -33,6 +33,7 @@ public class SocketManager {
     }
     public static void send(String arHostname, int arPort, int fromNodeId, String arMsg) {
         //System.out.println("#SEND " + arHostname + ";" + arPort + ";" + arMsg + ";");
+
         String message = fromNodeId + ";"  + arMsg;
         if (SOCKET_BY_SCTP) {
             SocketManager.sendBySCTP(arHostname, arPort, message);
@@ -61,6 +62,7 @@ public class SocketManager {
             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream());
             writer.println(arMsg);
             writer.close();
+            //System.out.println(arMsg);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -91,17 +93,22 @@ public class SocketManager {
     private static void sendBySCTP(String arHostname, int arPort, String arMsg) {
         try {
             SocketAddress socketAddress = new InetSocketAddress(arHostname,arPort);
-            System.out.println("open connection for socket [" + socketAddress + "]");
+           // System.out.println("open connection for socket [" + socketAddress + "]");
             SctpChannel sctpChannel = SctpChannel.open();//(socketAddress, 1 ,1 );
             ByteBuffer buf = ByteBuffer.allocateDirect(64000);
             sctpChannel.connect(socketAddress, 1 ,1);
-            buf=buf.wrap(arMsg.getBytes());
-            MessageInfo messageInfo=MessageInfo.createOutgoing(socketAddress,1);
-
-            sctpChannel.send(buf, messageInfo);
+            byte[] mess=arMsg.getBytes();
+            buf=buf.put(mess);
             buf.flip();
+            MessageInfo messageInfo=MessageInfo.createOutgoing(socketAddress,1);
+            try {
+                sctpChannel.send(buf, messageInfo);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+           // buf.flip();
             System.out.println("Send:"+arMsg);
-
+            sctpChannel.close();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -138,7 +145,8 @@ public class SocketManager {
 
              }*/
             SocketAddress serverSocketAddress = new InetSocketAddress(arPort);
-            SctpServerChannel sctpServerChannel =  SctpServerChannel.open().bind(serverSocketAddress);
+            SctpServerChannel sctpServerChannel =
+                    SctpServerChannel.open().bind(serverSocketAddress);
             SctpChannel sctpChannel;
             while ((sctpChannel = sctpServerChannel.accept()) != null) {
                 MessageInfo messageInfo = sctpChannel.receive(ByteBuffer.allocate(64000) , null, null);
