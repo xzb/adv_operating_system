@@ -5,28 +5,20 @@ import sun.jvm.hotspot.oops.Array;
 import sun.jvm.hotspot.runtime.Threads;
 
 import java.util.*;
-
+import Tool.SocketManager;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.PriorityQueue;
+import java.util.Set;
 /**
  * Created by on 10/19/16.yql赶紧做！
  */
-public class ServerOrderRequest extends ServerBase {
+public class ServerOrderRequest extends ServerBase  {
 
-    enum MESSAGE_TYPE {
-        REQUEST("REQUEST"),
-        GRANT("GRANT"),
-        RELEASE("RELEASE");
-
-        private String title;
-        private MESSAGE_TYPE(String arTitle) {
-            title = arTitle;
-        }
-        public String getTitle() {
-            return this.title;
-        }
-    }
+/***
     protected int nodeId;
     protected Node obNode;
-    protected Set<Integer> permission_received_from_quorum;
+    protected HashSet<Integer> permission_received_from_quorum;
     protected PriorityQueue<long[]> requestQueue;              //<timestamp, id>
     protected double obExeTime;
     protected App.AppCallback obAppCallback;
@@ -34,27 +26,41 @@ public class ServerOrderRequest extends ServerBase {
     private  Set<Integer> mSet;
     private ArrayList<Integer> qSet1;
     private ArrayList<Integer> mSet1;
-private Queue<Integer> reQueue;
-  //  private boolean[] checkGrant;
+
+    private boolean[] checkGrant;
     boolean lock;
     protected int index=0;
+    protected int nodeLastGrant=0;
     //private Comparator compa;
-
-
+***/
+    private ArrayList<Integer> qSet1;
+    private ArrayList<Integer> mSet1;
+    private Set<Integer> qSet;
+    private  Set<Integer> mSet;
+    private Queue<Integer> reQueue;
+    private int index;
     public ServerOrderRequest(int arNodeId)
     {
+
        super(arNodeId);
-        qSet=super.obNode.qset;
-        mSet=super.obNode.mset;
+        this.index=0;
+        Node obNode=Node.getNode(arNodeId);
+        qSet=obNode.qset;
+        mSet=obNode.mset;
+        reQueue = new LinkedList<>();
         qSet1=new ArrayList<>();
         mSet1=new ArrayList<>();
+        permission_received_from_quorum=new HashSet<>() ;
         for(int i:qSet){
             qSet1.add(i);
         }
         for(int i:mSet){
             mSet1.add(i);
         }
+        reQueue=new LinkedList<>();
 
+
+        System.out.println(arNodeId+"：qset:"+qSet1.get(0)+"--"+qSet1.get(1));
 
 
 
@@ -64,11 +70,12 @@ private Queue<Integer> reQueue;
 
 
         //checkGrant=new boolean[qSet.size()];
-        this.lock=false;
+        //this.lock=false;
 
-        launch();
+        //launch();
     }
-
+/*
+/***
     private void launch()	// receive all message, update time when necessary, call Client.send()
     // check message, call recvGrant(), recvFail(), recvInquire(), recvYield()
     {
@@ -95,39 +102,209 @@ private Queue<Integer> reQueue;
 
 
 
-    protected void checkMessage(String arMessage){
+private void launch()	// receive all message, update time when necessary, call Client.send()
+// check message, call recvGrant(), recvFail(), recvInquire(), recvYield()
+{
+    Runnable launch = new Runnable() {
+        public void run() {
+            SocketManager.receive(obNode.port, new ServerBase.ServerCallback() {
+
+                public void call(String message) {
+                    checkMessage(message);
+                }
+            });
+        }
+    };
+    new Thread(launch).start();
+}****/
+
+
+
+
+
+@Override
+    protected void checkMessage(String arMessage)
+    {
+        // fromNodeId; scalarTime; messageType
         String[] parts = arMessage.split(";");
         int fromNodeId = Integer.valueOf(parts[0]);
-      //  long scalarTime = Long.valueOf(parts[1]);
-        String mType = parts[1];
-        if (mType.equals(ServerOrderRequest.MESSAGE_TYPE.REQUEST.getTitle()))
+        long scalarTime = Long.valueOf(parts[1]);
+        String mType = parts[2];
+
+
+
+        if (mType.equals(MESSAGE_TYPE.REQUEST.getTitle()))
         {
             recvRequest(fromNodeId);
-
-
         }
-        else if (mType.equals(ServerOrderRequest.MESSAGE_TYPE.GRANT.getTitle()))
+        else if (mType.equals(MESSAGE_TYPE.GRANT.getTitle()))
         {
             recvGrant(fromNodeId);
-           // sendRequest(fromNodeId);
         }
-        else if (mType.equals(ServerOrderRequest.MESSAGE_TYPE.RELEASE.getTitle()))
+        else if (mType.equals(MESSAGE_TYPE.RELEASE.getTitle()))
         {
             recvRelease(fromNodeId);
+        }
+
+    }
+
+    @Override
+    public void enterCS(double exeTime, App.AppCallback app)	// add to queue, sendRequest
+    {
+        // add to log file
+        String log = nodeId + " request C.S.";
+        Tool.FileIO.writeFile(log);
+
+        obExeTime = exeTime;
+        obAppCallback = app;
+
+        reQueue.add(nodeId);
+        handleRequestQueue();
+
+        // if is locked, can still send Request
+        sendByType(MESSAGE_TYPE.REQUEST);
+    }
+
+    @Override
+    protected void actualEnterCS()
+    {
+        // should not stop server receiving
+        Runnable event = new Runnable() {
+            @Override
+            public void run() {
+
+                actualInCS = true;
+
+                // add to log file
+                String log = nodeId + " enter C.S. " + ", exeTime: " + obExeTime;
+                Tool.FileIO.writeFile(log);
+
+                // Sleep exeTime, then call leaveCS()
+                try {
+                    Thread.sleep((int) (obExeTime * 1000));
+                } catch (Exception e) {
+                }
+
+                leaveCS();
+            }
+        };
+        new Thread(event).start();
+    }
+
+    private void leaveCS()	// remove queue, sendRelease, callback App
+    {
+        actualInCS = false;
+
+        // add to log file
+        String log = nodeId + " leave C.S. ";
+        Tool.FileIO.writeFile(log);
+
+        locked = false;                                 // update locked
+       index=0;
+       // permission_received_from_quorum.clear();
+
+        int removeEntry = 0;
+        for(int entry : reQueue)
+        {
+            if (entry == nodeId)
+            {
+                removeEntry = entry;
+                break;
+            }
+        }
+        requestQueue.remove(removeEntry);               // should remove related entry
+
+        sendByType(MESSAGE_TYPE.RELEASE);
+        handleRequestQueue();                           // grant previous request here
+
+        if (obAppCallback != null)
+        {
+            obAppCallback.leaveCS();
         }
     }
 
 
 
+    @Override
+    protected void handleRequestQueue()
+    {
+        if (!locked && !reQueue.isEmpty()) {
+            int reqId = (int) reQueue.poll();
+            nodeLastGrant = reqId;
+
+            locked = true;
+            if (nodeId == reqId)
+            {
+               index++;  // grant itself
+                if (index==qSet1.size())
+                {
+                    actualEnterCS();                            // if Release or Yield message is the last permission that need to enter CS
+                }
+            }
+            else
+            {
+                sendByType(MESSAGE_TYPE.GRANT, reqId);          // grant the next process
+            }
+        }
+    }
+
+
+    @Override
+    protected void sendByType(MESSAGE_TYPE arType, int dstNodeId)
+    {
+        Node qNode = Node.getNode(dstNodeId);
+        SocketManager.send(qNode.hostname, qNode.port, nodeId, 0, arType.getTitle());
+
+    }
+
+    protected void recvRequest(int fromNodeId)
+    {
+        reQueue.add(fromNodeId);
+
+        handleRequestQueue();
+    }
+
+    @Override
+    protected void recvGrant(int fromNodeId)
+    {
+        index++;
+        if (index==qSet1.size())
+        {
+            actualEnterCS();                    // actually enter CS after receive grant from all
+        }
+    }
+
+    @Override
+    protected void recvRelease(int fromNodeId)
+    {
+
+            locked = false;
+
+            int removeEntry = 999;
+            for(int entry : reQueue)
+            {
+                if (entry == fromNodeId)
+                {
+                    removeEntry = entry;
+                    break;
+                }
+            }
+            reQueue.remove(removeEntry);       // should remove related entry
+
+            handleRequestQueue();
+    }
+
+
+/****
 
     //===========
-    private void sendRequest(int lastId){
+    private void sendRequest(int in){
              //TODO 可以改成挨个删除？
 
-        int nextId=qSet1.get(index);
+        int nextId=qSet1.get(in);
         Node qNode=Node.getNode(nextId);
-
-        SocketManager.send(qNode.hostname, qNode.port, nodeId,  "REQUEST");
+        sendByType(ServerBase.MESSAGE_TYPE.REQUEST,nextId);
+        //SocketManager.send(qNode.hostname, qNode.port, nodeId, );
 
 
 
@@ -143,7 +320,8 @@ private Queue<Integer> reQueue;
             if (qid == nodeId)          //TODO should ignore itself? when exe leaveCS lock=false and handlerequeue
                 continue;
             Node qNode = Node.getNode(qid);
-            SocketManager.send(qNode.hostname, qNode.port, nodeId,  "RELEASE");
+            sendByType(ServerBase.MESSAGE_TYPE.RELEASE,qid);
+           // SocketManager.send(qNode.hostname, qNode.port, nodeId,  "RELEASE");
 
 
         }
@@ -163,22 +341,24 @@ private Queue<Integer> reQueue;
     private void handleRequest(){
 
             if (!lock&&!reQueue.isEmpty()) {
-                lock = true;
+
                 int reqId = reQueue.poll();
                 nodeLastGrant = reqId;
 
                 if (nodeId == reqId)
-                {
+                {   lock = true;
                     permission_received_from_quorum.add(nodeId);    // grant itself
-                    if (permission_received_from_quorum.equals(obNode.qset))
+                    if (permission_received_from_quorum.equals(qSet1))
                     {
-                        actualEnterCS();                            // if Release or Yield message is the last permission that need to enter CS
+                        actualEnterCS();
+                        // if Release or Yield message is the last permission that need to enter CS
                     }
-                    else sendRequest(nodeId);
+
+                    else{index++; sendRequest(index);}
                 }
-                else
-                if (nodeId != reqId)
-                    sendByType(ServerBase.MESSAGE_TYPE.GRANT, reqId);          // grant the next process
+                else{
+                    lock = true;
+                    sendByType(ServerBase.MESSAGE_TYPE.GRANT, reqId);   }       // grant the next process
 
             }
 
@@ -190,7 +370,9 @@ private Queue<Integer> reQueue;
     private void firstRequest(){
 
       index=0;
-        lock=true;
+
+       // reQueue.add(qSet1.get(index));
+
         sendFirst(qSet1.get(index));
 
     }
@@ -214,7 +396,8 @@ private Queue<Integer> reQueue;
 
     private void sendFirst(int toId){
         Node toNode= Node.getNode(toId);
-        SocketManager.send(toNode.hostname, toNode.port, nodeId, "REQUEST");
+        sendByType(ServerBase.MESSAGE_TYPE.REQUEST,toId);
+        //SocketManager.send(toNode.hostname, toNode.port, nodeId, "REQUEST");
 
     }
 
@@ -224,25 +407,27 @@ private Queue<Integer> reQueue;
     {
         reQueue.add(fromNodeId);
 
+
         handleRequest();
     }
     protected void recvGrant(int fromNodeId)
-    {
+    {   System.out.println("Node"+nodeId+" receive grant from Node "+fromNodeId+"haha:"+index);
         permission_received_from_quorum.add(fromNodeId);
-        if (permission_received_from_quorum.equals(obNode.qset))
+        if (permission_received_from_quorum.equals(qSet))
         {
             actualEnterCS();                    // actually enter CS after receive grant from all
         }
         else
+        if(index<1)index++;
         sendRequest(fromNodeId);
-        index++;
+
 
     }
     protected void recvRelease(int fromNodeId)
     {
         if (fromNodeId == nodeLastGrant)            // may not on top of queue, should check previous grant
         {
-            locked = false;
+            lock = false;
 
             int removeEntry=9999;
             for(int entry : reQueue)        //TODO why have this
@@ -256,13 +441,13 @@ private Queue<Integer> reQueue;
             if(removeEntry!=9999)
             reQueue.remove(removeEntry);       // should remove related entry
 
-            handleRequestQueue();
+            handleRequest();
         }
     }
 
 
 
-    @Override
+   // @Override
     protected void actualEnterCS()
     {
         // should not stop server receiving
@@ -270,7 +455,7 @@ private Queue<Integer> reQueue;
             @Override
             public void run() {
 
-                actualInCS = true;
+               // actualInCS = true;
 
                 // add to log file
                 String log = nodeId + " enter C.S. , exeTime: " + obExeTime;
@@ -303,4 +488,7 @@ private Queue<Integer> reQueue;
         sendRelease();
         handleRequest();
     }
+
+    ***/
+
 }
