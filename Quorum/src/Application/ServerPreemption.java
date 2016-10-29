@@ -39,16 +39,17 @@ public class ServerPreemption extends ServerBase {
             }
             else            // received timestamp is on top of queue, need to Inquire
             {
-                if (nodeLastGrant != nodeId)
+                if (nodeLastGrant != nodeId)    // 1. send Inquire to one of the membership set
                 {
-                    sendByType(MESSAGE_TYPE.INQUIRE, nodeLastGrant);           // send Inquire to one of the membership set
+                    sendByType(MESSAGE_TYPE.INQUIRE, nodeLastGrant);
                 }
-                else        // has grant itself before
-                {
+                else if (!actualInCS && !failReceived.isEmpty())
+                {                               // 2. has grant itself before, yield if not actual in C.S. and receive fail before
                     permission_received_from_quorum.remove(nodeId);
                     nodeLastGrant = fromNodeId;
                     sendByType(MESSAGE_TYPE.GRANT, fromNodeId);
                 }
+                                                // 3. if receive fail in the future, surrender its own permission
             }
         }
         else                // received timestamp is not on top of queue, reply Fail
@@ -69,7 +70,7 @@ public class ServerPreemption extends ServerBase {
     {
         failReceived.add(fromNodeId);               // fromNodeId will send Grant back in the future, because the request is saved in queue
 
-        if (!inquireReceived.isEmpty())
+        if (!inquireReceived.isEmpty())             // 1. yield back permission
         {
             // Yield
             for (int nid : inquireReceived)
@@ -78,6 +79,13 @@ public class ServerPreemption extends ServerBase {
                 sendByType(MESSAGE_TYPE.YIELD, nid);
             }
             inquireReceived.clear();
+        }
+                                                    // 2. surrender its own permission
+        if (nodeLastGrant == nodeId && nodeLastGrant != (int)requestQueue.peek()[1])
+        {
+            permission_received_from_quorum.remove(nodeId);
+            nodeLastGrant = (int)requestQueue.peek()[1];
+            sendByType(MESSAGE_TYPE.GRANT, nodeLastGrant);
         }
     }
 
