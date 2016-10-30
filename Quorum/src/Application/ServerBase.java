@@ -137,10 +137,11 @@ public class ServerBase {
      *********************************************/
     public void enterCS(double exeTime, App.AppCallback app)	// add to queue, sendRequest
     {
-        requestQueue.add(new long[]{lamportTime, nodeId});
+        long currentTime = lamportTime;                         // make sure identical time in queue and send event
+        requestQueue.add(new long[]{currentTime, nodeId});
 
         // add to log file
-        String log = nodeId + " request C.S. at lamportTime: " + lamportTime + ", queue top: " + requestQueue.peek()[1];
+        String log = nodeId + " request C.S. at lamportTime: " + currentTime + ", queue top: " + requestQueue.peek()[1];
         Tool.FileIO.writeFile(log);
 
         obExeTime = exeTime;
@@ -149,7 +150,7 @@ public class ServerBase {
         handleRequestQueue();
 
         // if is locked, can still send Request
-        sendByType(MESSAGE_TYPE.REQUEST);
+        sendRequest(currentTime);
     }
     protected void actualEnterCS()
     {
@@ -235,16 +236,30 @@ public class ServerBase {
     /*********************************************
      * send message logic
      *********************************************/
+    protected void sendRequest(long lamport)            // Request timestamp is critical
+    {
+        Set<Integer> quorumSet = obNode.qset;
+        for(int qid : quorumSet)
+        {
+            if (qid == nodeId)
+                continue;
+            Node qNode = Node.getNode(qid);
+            SocketManager.send(qNode.hostname, qNode.port, nodeId, lamport, MESSAGE_TYPE.REQUEST.getTitle());
+        }
+
+        lamportTime++;                  // increment after send, piggyback old value
+    }
     // broadcast to every quorum
     protected void sendByType(MESSAGE_TYPE arType)
     {
         Set<Integer> quorumSet = obNode.qset;
+        long currentTime = lamportTime;                     // prevent change when broadcasting
         for(int qid : quorumSet)
         {
             if (qid == nodeId)          //TODO should ignore itself?
                 continue;
             Node qNode = Node.getNode(qid);
-            SocketManager.send(qNode.hostname, qNode.port, nodeId, lamportTime, arType.getTitle());
+            SocketManager.send(qNode.hostname, qNode.port, nodeId, currentTime, arType.getTitle());
         }
 
         lamportTime++;                  // increment after send, piggyback old value

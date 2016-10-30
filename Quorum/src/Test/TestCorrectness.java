@@ -49,7 +49,7 @@ public class TestCorrectness {
         {
             if (currentProcessInCS != null)
             {
-                System.out.println("Warings: Multiple processes enter critical section! " +
+                System.out.println("Warnings: Multiple processes enter critical section! " +
                         "Process id: " + currentProcessInCS + ", " + processId);
                 System.exit(1);
             }
@@ -58,17 +58,25 @@ public class TestCorrectness {
                 currentProcessInCS = processId;
             }
         }
-        else if ("leave".equals(eventType) && currentProcessInCS.equals(processId))
+        else if ("leave".equals(eventType))
         {
-            if (!numsEnterCS.containsKey(currentProcessInCS))
+            if (currentProcessInCS == null)             // no process enter before?
             {
-                numsEnterCS.put(currentProcessInCS, 1);
+                System.out.println("Warnings: process " + processId + " leave critical section without entering!");
+                System.exit(1);
             }
-            else
+            else if (currentProcessInCS.equals(processId))
             {
-                numsEnterCS.put(currentProcessInCS, numsEnterCS.get(currentProcessInCS) + 1);
+                if (!numsEnterCS.containsKey(currentProcessInCS))
+                {
+                    numsEnterCS.put(currentProcessInCS, 1);
+                }
+                else
+                {
+                    numsEnterCS.put(currentProcessInCS, numsEnterCS.get(currentProcessInCS) + 1);
+                }
+                currentProcessInCS = null;
             }
-            currentProcessInCS = null;
         }
     }
 
