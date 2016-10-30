@@ -20,7 +20,7 @@ import com.sun.nio.sctp.MessageInfo;
  * Created on xiezebin 10/18/16.
  */
 public class SocketManager {
-    private final static boolean SOCKET_BY_SCTP = false;
+    private final static boolean SOCKET_BY_SCTP = true;
 
     public static void send(String arHostname, int arPort, int fromNodeId, long scalarTime, String arMsg) {
         //System.out.println(fromNodeId+" send :" + arMsg + ";");
@@ -91,23 +91,32 @@ public class SocketManager {
     }
 
     private static void sendBySCTP(String arHostname, int arPort, String arMsg) {
-        try {
+        SctpChannel sctpChannel;
             SocketAddress socketAddress = new InetSocketAddress(arHostname,arPort);
            // System.out.println("open connection for socket [" + socketAddress + "]");
-            SctpChannel sctpChannel = SctpChannel.open();//(socketAddress, 1 ,1 );
-            ByteBuffer buf = ByteBuffer.allocateDirect(64000);
-            sctpChannel.connect(socketAddress, 1 ,1);
-            byte[] mess=arMsg.getBytes();
-            buf=buf.put(mess);
+        try {   sctpChannel = SctpChannel.open();//(socketAddress, 1 ,1 );
+            sctpChannel.connect(socketAddress);
+
+
+            ByteBuffer buf = ByteBuffer.allocate(6400);
+            MessageInfo messageInfo=MessageInfo.createOutgoing(null,0);
+            buf=buf.put(arMsg.getBytes());
             buf.flip();
-            MessageInfo messageInfo=MessageInfo.createOutgoing(socketAddress,1);
-            try {
-                sctpChannel.send(buf, messageInfo);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
+            sctpChannel.send(buf, messageInfo);
+           //
+
+
+          //  byte[] mess=arMsg.getBytes();
+
+
+
+          //  try {
+
+          //  }catch (Exception e){
+          //      e.printStackTrace();
+           // }
            // buf.flip();
-            System.out.println("Send:"+arMsg);
+            System.out.println("Send:"+arMsg+"by SCTP");
             sctpChannel.close();
 
         } catch (IOException e) {
@@ -117,7 +126,7 @@ public class SocketManager {
 
     private static void receiveBySCTP(int arPort, ServerCallback server) {
         try{
-        String message="";
+        String message=null;
             /***
              * SctpServerChannel ssc = SctpServerChannel.open();
              InetSocketAddress serverAddr = new InetSocketAddress(arPort);
@@ -149,8 +158,9 @@ public class SocketManager {
                     SctpServerChannel.open().bind(serverSocketAddress);
             SctpChannel sctpChannel;
             while ((sctpChannel = sctpServerChannel.accept()) != null) {
-                MessageInfo messageInfo = sctpChannel.receive(ByteBuffer.allocate(64000) , null, null);
-                message=messageInfo.toString();
+                ByteBuffer byteBuffer=ByteBuffer.allocate(6500);
+                MessageInfo messageInfo = sctpChannel.receive(byteBuffer , null, null);
+                message=byteToString(byteBuffer);
 
                 System.out.println("Receive: " + message);
                 if (server != null) {
@@ -161,6 +171,20 @@ public class SocketManager {
             } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    private static String byteToString(ByteBuffer byteBuffer){
+        byteBuffer.flip();
+        byteBuffer.position(0);
+        byteBuffer.limit(6500);
+        byte[]bufArr=new byte[byteBuffer.remaining()];
+        for(int i=0;i<byteBuffer.remaining();i++){
+            bufArr[i]='\0';
+        }
+        byteBuffer.get(bufArr);
+        String result=new String(bufArr);
+        result=result.substring(0,result.indexOf('\0'));
+        return result;
+
     }
 }
 
