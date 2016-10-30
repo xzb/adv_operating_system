@@ -38,6 +38,10 @@ public class TestCorrectness {
     private static void processLineOfLog (String line)
     {
         String[] parts = line.split(" ");
+        if (parts.length < 2)
+        {
+            return;
+        }
         String processId = parts[0];
         String eventType = parts[1];
 

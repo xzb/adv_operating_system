@@ -89,7 +89,7 @@ public class ServerBase {
 	/*********************************************
      * when receive message, check type and dispatch event
      *********************************************/
-    private void checkMessage(String arMessage)
+    protected void checkMessage(String arMessage)
     {
         // fromNodeId; scalarTime; messageType
         String[] parts = arMessage.split(";");
@@ -137,14 +137,15 @@ public class ServerBase {
      *********************************************/
     public void enterCS(double exeTime, App.AppCallback app)	// add to queue, sendRequest
     {
+        requestQueue.add(new long[]{lamportTime, nodeId});
+
         // add to log file
-        String log = nodeId + " request C.S. at lamportTime: " + lamportTime;
+        String log = nodeId + " request C.S. at lamportTime: " + lamportTime + ", queue top: " + requestQueue.peek()[1];
         Tool.FileIO.writeFile(log);
 
         obExeTime = exeTime;
         obAppCallback = app;
 
-        requestQueue.add(new long[]{lamportTime, nodeId});
         handleRequestQueue();
 
         // if is locked, can still send Request
@@ -225,6 +226,7 @@ public class ServerBase {
             }
             else
             {
+                //TODO remove permission, no need
                 sendByType(MESSAGE_TYPE.GRANT, reqId);          // grant the next process
             }
         }
