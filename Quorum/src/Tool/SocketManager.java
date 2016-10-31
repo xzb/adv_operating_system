@@ -20,21 +20,11 @@ import com.sun.nio.sctp.MessageInfo;
  * Created on xiezebin 10/18/16.
  */
 public class SocketManager {
-    private final static boolean SOCKET_BY_SCTP = true;
+    public static boolean SOCKET_BY_SCTP = false;
 
     public static void send(String arHostname, int arPort, int fromNodeId, long scalarTime, String arMsg) {
         //System.out.println(fromNodeId+" send :" + arMsg + ";");
         String message = fromNodeId + ";" + scalarTime + ";" + arMsg;
-        if (SOCKET_BY_SCTP) {
-            SocketManager.sendBySCTP(arHostname, arPort, message);
-        } else {
-            SocketManager.sendByTCP(arHostname, arPort, message);
-        }
-    }
-    public static void send(String arHostname, int arPort, int fromNodeId, String arMsg) {
-        //System.out.println("#SEND " + arHostname + ";" + arPort + ";" + arMsg + ";");
-
-        String message = fromNodeId + ";"  + arMsg;
         if (SOCKET_BY_SCTP) {
             SocketManager.sendBySCTP(arHostname, arPort, message);
         } else {
@@ -116,7 +106,7 @@ public class SocketManager {
           //      e.printStackTrace();
            // }
            // buf.flip();
-            System.out.println("Send:"+arMsg+"by SCTP");
+            System.out.println("Send: " + arMsg + " by SCTP");
             sctpChannel.close();
 
         } catch (IOException e) {

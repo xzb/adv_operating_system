@@ -78,6 +78,19 @@ public class UniTest {
         //appD.nextRequest();
     }
 
+    public static void appTest16()
+    {
+        App[] pool = new App[16];
+        for (int i = 0; i < 16; i++)
+        {
+            pool[i] = new App(i);
+        }
+
+        for (int i = 0; i < 16; i++)
+        {
+            pool[i].nextRequest();
+        }
+    }
 
     public static void sleep(int second)
     {
@@ -95,7 +108,8 @@ public class UniTest {
         //serverTest();
         //serverPreemptionTest();
 
-        appTest();
+        //appTest();
+        appTest16();
         //TestCorrectness.checkLog();
 
         //System.exit(0);

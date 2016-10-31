@@ -14,8 +14,11 @@ public class FileIO {
         System.out.println(arContent);
 
         try {
-            //int last = CONFIG_FILE.lastIndexOf("\\");
-            //String dir = CONFIG_FILE.substring(0, last + 1);
+            // set file directory for script running.
+            int last = Parser.config.lastIndexOf("/");
+            String dir = Parser.config.substring(0, last + 1);
+            resultFile = dir + "log.txt";
+            //System.out.println("==LOG dir: " + dir);
 
             FileWriter fw = new FileWriter(resultFile, true);   // append file
             BufferedWriter bfw = new BufferedWriter(fw);

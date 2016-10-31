@@ -22,7 +22,7 @@ public class Parser {
     // int minSendDelay;
     // int snapshotDelay;
     // int maxNumber;
-    String config="config.txt";
+    public static String config = "config.txt";
 
     public String[] portPath;
     public String[] hostName;
@@ -61,17 +61,18 @@ public class Parser {
             for (int i = 0; i < allNodes; i++) {
                 // System.out.println(in);
                 String[] tmp2 = skipLines(in).split(" ");
-                hostName[i] = tmp2[1];
-                numPort[i] = Integer.parseInt(tmp2[2].replaceAll(" ",""));
+                int nodeId = Integer.valueOf(tmp2[0]);
+                hostName[nodeId] = tmp2[1];
+                numPort[nodeId] = Integer.parseInt(tmp2[2].replaceAll(" ",""));
                 HashSet<Integer> sett1=new HashSet<Integer>();
                 HashSet<Integer> sett2=new HashSet<Integer>();
-                qs.put(i,sett1);
-                ms.put(i,sett2);
+                qs.put(nodeId,sett1);
+                ms.put(nodeId,sett2);
 
             }
 
             for (int i = 0; i < allNodes; i++) {
-
+                /*
                 String tmp3 = skipLines(in);
                 //System.out.println(tmp3.length());
                 for(int j=1;j<tmp3.length();j++){
@@ -81,10 +82,21 @@ public class Parser {
                     ms.get(cha).add(i);
                     // System.out.println("这是第i="+i+"j="+j);
                 }
+                */
                 //      portPath[i]=ss.replace("(","");
                 //      portPath[i]=portPath[i].replace(")","")+i;
                 //      portPath[i]=portPath[i].replaceAll(" ","");
                 // System.out.println(portPath[i]);
+
+                String[] parts = skipLines(in).split(" ");
+                int nodeId = Integer.valueOf(parts[0]);
+                for (int j = 1; j < parts.length; j++)
+                {
+                    int cha=Integer.valueOf(parts[j]);
+                    qs.get(nodeId).add(cha);
+                    ms.get(cha).add(nodeId);
+                }
+
             }
         }catch (IOException e) {
             e.printStackTrace();

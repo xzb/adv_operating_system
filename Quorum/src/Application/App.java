@@ -1,5 +1,7 @@
 package Application;
 
+import Tool.*;
+
 import java.util.Random;
 
 /**
@@ -12,7 +14,7 @@ public class App {
     private ServerBase obServer;
     private int remainNumOfRequest;
 
-    private boolean APPROACH_REQUEST_IN_ORDER = false;
+    private static boolean APPROACH_REQUEST_IN_ORDER = true;
 
     public App(int arId)
     {
@@ -74,8 +76,23 @@ public class App {
     public static void main(String[] args) {
         if (args.length < 1)
         {
-            System.out.println("Please enter node id.");
+            System.out.println("Please enter nodeId, approach(0:orderRequest/1:preemption), socket(0:sctp/1:tcp).");
+            System.out.println("Default: orderRequest, sctp.");
             System.exit(1);
+        }
+        if (args.length > 1)
+        {
+            // approach option, 0 for order request, 1 for preemption, default request in order
+            APPROACH_REQUEST_IN_ORDER = "0".equals(args[1]);
+        }
+        if (args.length > 2)
+        {
+            // socket option, 0 for sctp, 1 for tcp, default sctp
+            SocketManager.SOCKET_BY_SCTP = "0".equals(args[2]);
+        }
+        if (args.length > 3)
+        {
+            Parser.config = args[3];
         }
 
         // launch server
