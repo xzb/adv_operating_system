@@ -164,7 +164,8 @@ private void launch()	// receive all message, update time when necessary, call C
     {
         // add to log file
         String log = nodeId + " request C.S.";
-        Tool.FileIO.writeFile(log);
+        //Tool.FileIO.writeFile(log);
+        System.out.println(log);
 
         obExeTime = exeTime;
         obAppCallback = app;
@@ -181,7 +182,7 @@ private void launch()	// receive all message, update time when necessary, call C
         int toID=qSet1.get(0);
        // System.out.println(nodeId+"send request to NO."+toID);
         Node qNode = Node.getNode(toID);
-        SocketManager.send(qNode.hostname, qNode.port, nodeId, 0 , MESSAGE_TYPE.REQUEST.getTitle());
+        SocketManager.send(qNode.hostname, qNode.port, nodeId, 0, MESSAGE_TYPE.REQUEST.getTitle());
 
     }
 

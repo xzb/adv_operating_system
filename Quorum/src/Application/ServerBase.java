@@ -140,9 +140,10 @@ public class ServerBase {
         long currentTime = lamportTime;                         // make sure identical time in queue and send event
         requestQueue.add(new long[]{currentTime, nodeId});
 
-        // add to log file
+        // add to log file, may conflicts in file!!
         String log = nodeId + " request C.S. at lamportTime: " + currentTime + ", queue top: " + requestQueue.peek()[1];
-        Tool.FileIO.writeFile(log);
+        //Tool.FileIO.writeFile(log);
+        System.out.println(log);
 
         obExeTime = exeTime;
         obAppCallback = app;
