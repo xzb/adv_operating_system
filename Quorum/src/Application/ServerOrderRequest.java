@@ -2,8 +2,12 @@ package Application;
 
 import Tool.SocketManager;
 
+
 import java.util.*;
+import Tool.SocketManager;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.PriorityQueue;
 import java.util.Set;
 /**
  * Created by on 10/19/16.yql赶紧做！
@@ -142,6 +146,18 @@ private void launch()	// receive all message, update time when necessary, call C
         }
 
     }
+   @Override
+    protected void sendRequest(long lamport)           // Request timestamp is critical
+    {
+
+        int toID=qSet1.get(index);
+        System.out.println("send retuest to NO."+toID);
+            Node qNode = Node.getNode(toID);
+            SocketManager.send(qNode.hostname, qNode.port, nodeId, lamport, MESSAGE_TYPE.REQUEST.getTitle());
+
+
+                     // increment after send, piggyback old value
+    }
 
     @Override
     public void enterCS(double exeTime, App.AppCallback app)	// add to queue, sendRequest
@@ -157,7 +173,7 @@ private void launch()	// receive all message, update time when necessary, call C
         handleRequestQueue();
 
         // if is locked, can still send Request
-        sendByType(MESSAGE_TYPE.REQUEST);
+        sendRequest(0);
     }
 
     @Override
@@ -222,31 +238,51 @@ private void launch()	// receive all message, update time when necessary, call C
 
     @Override
     protected void handleRequestQueue()
-    {
+    {System.out.println("node:"+nodeId+"   qset1 size="+qSet1.size()+"index:"+index);
+        System.out.println("node:"+nodeId+";lock="+locked);
         if (!locked && !reQueue.isEmpty()) {
-            int reqId = (int) reQueue.poll();
-            nodeLastGrant = reqId;
 
             locked = true;
-            if (nodeId == reqId)
+            int reqId = (int) reQueue.poll();
+            System.out.println("node:"+nodeId+"   chuli:"+reqId+"  ;index:"+index);
+            nodeLastGrant = reqId;
+
+
+            if (reqId == nodeId)
             {
                index++;  // grant itself
+                System.out.println("qset1 size="+qSet1.size());
                 if (index==qSet1.size())
-                {
+                {   System.out.println("!!!!!!qset1 size="+index);
                     actualEnterCS();                            // if Release or Yield message is the last permission that need to enter CS
-                }
+                }else {sendRequest(0); }
+                handleRequestQueue();
             }
-            else
+            else if(reqId!=nodeId)
             {
                 sendByType(MESSAGE_TYPE.GRANT, reqId);          // grant the next process
-            }
+            }handleRequestQueue();
         }
     }
+  /***
+    @Override
+    protected void sendByType(MESSAGE_TYPE arType) {
 
+        int toID=qSet1.get(index);
+        Node qNode = Node.getNode(toID);
+
+        SocketManager.send(qNode.hostname, qNode.port, nodeId, 0, arType.getTitle());
+
+
+        // increment after send, piggyback old value
+    }***/
 
     @Override
     protected void sendByType(MESSAGE_TYPE arType, int dstNodeId)
-    {
+    {   //if(arType.getTitle().equals("GRANT")){
+        System.out.println("281 HANG");
+    //}
+
         Node qNode = Node.getNode(dstNodeId);
         SocketManager.send(qNode.hostname, qNode.port, nodeId, 0, arType.getTitle());
 
@@ -255,7 +291,7 @@ private void launch()	// receive all message, update time when necessary, call C
     protected void recvRequest(int fromNodeId)
     {
         reQueue.add(fromNodeId);
-
+        System.out.println(nodeId+" from id:"+fromNodeId);
         handleRequestQueue();
     }
 
@@ -263,10 +299,18 @@ private void launch()	// receive all message, update time when necessary, call C
     protected void recvGrant(int fromNodeId)
     {
         index++;
+        System.out.println("Grant from:" +fromNodeId);
+
+
+
         if (index==qSet1.size())
-        {
+        {   index=0;
             actualEnterCS();                    // actually enter CS after receive grant from all
         }
+        else {
+            int toID=qSet1.get(index);
+            Node qNode = Node.getNode(toID);
+            SocketManager.send(qNode.hostname, qNode.port, nodeId, 0, "REQUEST");handleRequestQueue();}
     }
 
     @Override
@@ -285,10 +329,23 @@ private void launch()	// receive all message, update time when necessary, call C
                 }
             }
             reQueue.remove(removeEntry);       // should remove related entry
-
+        handleRequestQueue();
             handleRequestQueue();
     }
+@Override
+protected void sendByType(MESSAGE_TYPE arType)
+{
+    Set<Integer> quorumSet = obNode.qset;
+    long currentTime = 0;                     // prevent change when broadcasting
+    for(int qid : quorumSet)
+    {
 
+        Node qNode = Node.getNode(qid);
+        SocketManager.send(qNode.hostname, qNode.port, nodeId, currentTime, arType.getTitle());
+    }
+
+                      // increment after send, piggyback old value
+}
 
 /****
 
