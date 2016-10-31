@@ -151,7 +151,7 @@ private void launch()	// receive all message, update time when necessary, call C
     {
 
         int toID=qSet1.get(index);
-        System.out.println("send retuest to NO."+toID);
+      //  System.out.println(nodeId+"send request to NO."+toID);
             Node qNode = Node.getNode(toID);
             SocketManager.send(qNode.hostname, qNode.port, nodeId, lamport, MESSAGE_TYPE.REQUEST.getTitle());
 
@@ -169,11 +169,20 @@ private void launch()	// receive all message, update time when necessary, call C
         obExeTime = exeTime;
         obAppCallback = app;
 
-        reQueue.add(nodeId);
+        // reQueue.add(nodeId);
         handleRequestQueue();
 
         // if is locked, can still send Request
-        sendRequest(0);
+        sendFirst();
+
+    }
+    protected void sendFirst(){
+
+        int toID=qSet1.get(0);
+       // System.out.println(nodeId+"send request to NO."+toID);
+        Node qNode = Node.getNode(toID);
+        SocketManager.send(qNode.hostname, qNode.port, nodeId, 0 , MESSAGE_TYPE.REQUEST.getTitle());
+
     }
 
     @Override
@@ -210,12 +219,11 @@ private void launch()	// receive all message, update time when necessary, call C
         String log = nodeId + " leave C.S. ";
         Tool.FileIO.writeFile(log);
 
-        locked = false;                                 // update locked
-       index=0;
+
        // permission_received_from_quorum.clear();
 
         int removeEntry = 0;
-        for(int entry : reQueue)
+     /***   for(int entry : reQueue)
         {
             if (entry == nodeId)
             {
@@ -223,37 +231,42 @@ private void launch()	// receive all message, update time when necessary, call C
                 break;
             }
         }
-        requestQueue.remove(removeEntry);               // should remove related entry
-
+        reQueue.remove(removeEntry);               // should remove related entry
+***/
         sendByType(MESSAGE_TYPE.RELEASE);
-        handleRequestQueue();                           // grant previous request here
+                               // grant previous request here
 
         if (obAppCallback != null)
         {
             obAppCallback.leaveCS();
         }
+        index=0;
+        locked = false;                                 // update locked
+        handleRequestQueue();
     }
 
 
 
     @Override
     protected void handleRequestQueue()
-    {System.out.println("node:"+nodeId+"   qset1 size="+qSet1.size()+"index:"+index);
-        System.out.println("node:"+nodeId+";lock="+locked);
+    {  // System.out.println("node:"+nodeId+"   qset1 size="+qSet1.size()+"index:"+index);
+       // System.out.println("node:"+nodeId+";lock="+locked);
         if (!locked && !reQueue.isEmpty()) {
 
-            locked = true;
-            int reqId = (int) reQueue.poll();
-            System.out.println("node:"+nodeId+"   chuli:"+reqId+"  ;index:"+index);
-            nodeLastGrant = reqId;
 
+            int reqId = (int) reQueue.poll();
+            locked = true;
+          //  System.out.println("node:"+nodeId+"   chuli:"+reqId+"  ;index:"+index);
+            nodeLastGrant = reqId;
+          //  System.out.println("node:"+nodeId+"  exe:"+reqId+"  ;index:"+index);
 
             if (reqId == nodeId)
             {
                index++;  // grant itself
-                System.out.println("qset1 size="+qSet1.size());
+             //   System.out.println("qset1 size="+qSet1.size());
+             //   System.out.println("index:"+index+"; qSet1.size:"+qSet1.size());
                 if (index==qSet1.size())
-                {   System.out.println("!!!!!!qset1 size="+index);
+                {
                     actualEnterCS();                            // if Release or Yield message is the last permission that need to enter CS
                 }else {sendRequest(0); }
                 handleRequestQueue();
@@ -280,18 +293,32 @@ private void launch()	// receive all message, update time when necessary, call C
     @Override
     protected void sendByType(MESSAGE_TYPE arType, int dstNodeId)
     {   //if(arType.getTitle().equals("GRANT")){
-        System.out.println("281 HANG");
+       // System.out.println("281 HANG");
     //}
 
         Node qNode = Node.getNode(dstNodeId);
         SocketManager.send(qNode.hostname, qNode.port, nodeId, 0, arType.getTitle());
 
     }
+    @Override
+    protected void sendByType(MESSAGE_TYPE arType)
+    {   //System.out.println(nodeId+" Broad release!");
+        Set<Integer> quorumSet = obNode.qset;
+        long currentTime = 0;                     // prevent change when broadcasting
+        for(int qid : quorumSet)
+        {
+            if(qid==nodeId) continue;;
+            Node qNode = Node.getNode(qid);
+            SocketManager.send(qNode.hostname, qNode.port, nodeId, currentTime, arType.getTitle());
+        }
+
+        // increment after send, piggyback old value
+    }
 
     protected void recvRequest(int fromNodeId)
     {
         reQueue.add(fromNodeId);
-        System.out.println(nodeId+" from id:"+fromNodeId);
+        System.out.println(nodeId+" receive from id:"+fromNodeId);
         handleRequestQueue();
     }
 
@@ -299,7 +326,7 @@ private void launch()	// receive all message, update time when necessary, call C
     protected void recvGrant(int fromNodeId)
     {
         index++;
-        System.out.println("Grant from:" +fromNodeId);
+        //System.out.println(nodeId + "receive Grant from:" +fromNodeId);
 
 
 
@@ -316,9 +343,9 @@ private void launch()	// receive all message, update time when necessary, call C
     @Override
     protected void recvRelease(int fromNodeId)
     {
-
+            //System.out.println(nodeId+"receive release from:"+fromNodeId);
             locked = false;
-
+/***
             int removeEntry = 999;
             for(int entry : reQueue)
             {
@@ -329,23 +356,11 @@ private void launch()	// receive all message, update time when necessary, call C
                 }
             }
             reQueue.remove(removeEntry);       // should remove related entry
+***/
         handleRequestQueue();
-            handleRequestQueue();
-    }
-@Override
-protected void sendByType(MESSAGE_TYPE arType)
-{
-    Set<Integer> quorumSet = obNode.qset;
-    long currentTime = 0;                     // prevent change when broadcasting
-    for(int qid : quorumSet)
-    {
 
-        Node qNode = Node.getNode(qid);
-        SocketManager.send(qNode.hostname, qNode.port, nodeId, currentTime, arType.getTitle());
     }
 
-                      // increment after send, piggyback old value
-}
 
 /****
 
