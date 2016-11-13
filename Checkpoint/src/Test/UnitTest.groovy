@@ -1,13 +1,16 @@
 package Test
 
 import Application.*
+import Tool.*
 import org.junit.Before
 import org.junit.Test
+import static org.junit.Assert.assertEquals
 
 /**
  * Created by xiezebin on 11/12/16.
  */
-class UnitTest extends groovy.util.GroovyTestCase {
+class UnitTest {
+    private Parser ps;
     private Node node;
     private RandomMessage randomMessage;
     private TwoPhaseSnapshot twoPhaseSnapshot;
@@ -17,7 +20,8 @@ class UnitTest extends groovy.util.GroovyTestCase {
 
     @Before
     public void setup() {
-        node = new Node();
+        ps = new Parser();
+        node = new Node(0);
         randomMessage = new RandomMessage();
         twoPhaseSnapshot = new TwoPhaseSnapshot();
         checkpointing = new Checkpointing();
@@ -25,6 +29,11 @@ class UnitTest extends groovy.util.GroovyTestCase {
     }
 
 
+    @Test
+    public void testParser() {
+        assertEquals("cohortMap size:", ps.numNodes, ps.cohorts.size())
+        assertEquals("operationList size:", ps.numOperations, ps.operationList.size())
+    }
     @Test
     public void testNode() {
         //assertEquals("", 0, node.);

@@ -1,139 +1,86 @@
 package Tool;
 /**
- * Created by yxl154630 on 10/18/16.
+ * Created by on 10/18/16.
  */
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import com.sun.nio.sctp.*;
+import java.util.List;
+
 public class Parser {
 
-    public HashMap<Integer,HashSet<Integer>> ms;
-    public HashMap<Integer,HashSet<Integer>> qs;
-    // int minPerActive;
-    // int maxPerActive;
-    // int minSendDelay;
-    // int snapshotDelay;
-    // int maxNumber;
     public static String config = "config.txt";
 
-    public String[] portPath;
-    public String[] hostName;
-    public int[] numPort;
-    public int allNodes;
-    public int REQUEST_DELAY;
-    public int CS_EXE_TIME;
-    public int Total_Request;
-
+    public int numNodes;
+    public int numOperations;
+    public int minInstanceDelay;
+    public int minSendDelay;
+    public int numRandomMessages;
+    public String[] hostnames;
+    public int[] ports;
+    public HashMap<Integer,HashSet<Integer>> cohorts;
+    public List<String> operationList;
 
     public Parser()
     {
         parse();
     }
-    void parse() {
+    private void parse() {
         try
-         {
+        {
             FileReader fr = new FileReader(config);
             BufferedReader in = new BufferedReader(fr);
 
-            //System.out.println(in);
+            // scan first line
             String[] tmp = skipLines(in).split(" ");
-            this.allNodes=Integer.parseInt(tmp[0]);
-            this.REQUEST_DELAY=Integer.parseInt(tmp[1]);
-            this.CS_EXE_TIME=Integer.parseInt(tmp[2]);
-            this.Total_Request=Integer.parseInt(tmp[3]);
-            this.portPath=new String[allNodes];
-            this.hostName=new String[allNodes];
-            this.numPort=new int[allNodes];
-            //1016 addition
-            this.ms=new HashMap<Integer,HashSet<Integer>>();
-            this.qs=new HashMap<Integer,HashSet<Integer>>();
+            this.numNodes = Integer.parseInt(tmp[0]);
+            this.numOperations = Integer.parseInt(tmp[1]);
+            this.minInstanceDelay = Integer.parseInt(tmp[2]);
+            this.minSendDelay = Integer.parseInt(tmp[3]);
+            this.numRandomMessages = Integer.parseInt(tmp[4]);
+            this.hostnames = new String[numNodes];
+            this.ports = new int[numNodes];
+            this.cohorts = new HashMap<Integer,HashSet<Integer>>();
+            this.operationList = new ArrayList<String>();
 
-
-
-            for (int i = 0; i < allNodes; i++) {
+            // scan hostnames and ports
+            for (int i = 0; i < numNodes; i++) {
                 // System.out.println(in);
                 String[] tmp2 = skipLines(in).split(" ");
                 int nodeId = Integer.valueOf(tmp2[0]);
-                hostName[nodeId] = tmp2[1];
-                numPort[nodeId] = Integer.parseInt(tmp2[2].replaceAll(" ",""));
-                HashSet<Integer> sett1=new HashSet<Integer>();
-                HashSet<Integer> sett2=new HashSet<Integer>();
-                qs.put(nodeId,sett1);
-                ms.put(nodeId,sett2);
+                hostnames[nodeId] = tmp2[1];
+                ports[nodeId] = Integer.parseInt(tmp2[2].replaceAll(" ",""));
+                cohorts.put(nodeId, new HashSet<Integer>());
 
             }
 
-            for (int i = 0; i < allNodes; i++) {
-                /*
-                String tmp3 = skipLines(in);
-                //System.out.println(tmp3.length());
-                for(int j=1;j<tmp3.length();j++){
-
-                    int cha=tmp3.charAt(j)-'0';
-                    qs.get(i).add(cha);
-                    ms.get(cha).add(i);
-                    // System.out.println("这是第i="+i+"j="+j);
-                }
-                */
-                //      portPath[i]=ss.replace("(","");
-                //      portPath[i]=portPath[i].replace(")","")+i;
-                //      portPath[i]=portPath[i].replaceAll(" ","");
-                // System.out.println(portPath[i]);
+            // scan cohorts
+            for (int i = 0; i < numNodes; i++) {
 
                 String[] parts = skipLines(in).split(" ");
                 int nodeId = Integer.valueOf(parts[0]);
                 for (int j = 1; j < parts.length; j++)
                 {
                     int cha=Integer.valueOf(parts[j]);
-                    qs.get(nodeId).add(cha);
-                    ms.get(cha).add(nodeId);
+                    cohorts.get(nodeId).add(cha);
                 }
 
             }
+
+            // scan operations
+            for (int i = 0; i < numOperations; i++)
+            {
+                String line = skipLines(in);
+                operationList.add(line);
+            }
+
         }catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-/***
-    public static void main(String[] args) {
-
-
-
-
-        String config = "/Users/yql/Desktop/config.txt";
-        Parser se=new Parser();
-        se.parse();
-        // System.out.println(se.allNodes);
-        //System.out.println(se.portPath[3]);
-        //   for(Object key: se.qs){
-        //     for(Object key2:se.qs.get(key)){
-        System.out.println("se.REQUEST_DELAY:"+se.hostName[3]);
-        System.out.println("se.REQUEST_DELAY:"+se.REQUEST_DELAY);
-        System.out.println("se.CS_EXE_TIME:"+se.CS_EXE_TIME);
-        System.out.println("se.Total_Request:"+se.Total_Request);
-          for(int i=0;i<5;i++) {
-         System.out.println("qs of node"+i+":");
-         for (Object key : se.qs.get(i)) {
-         System.out.print(key);
-         }
-         System.out.println("");
-         System.out.println("ms of node"+i+":");
-         for (Object key : se.ms.get(i)) {
-         System.out.print(key);
-         }
-         System.out.println("");
-         }
-         ****/
-   // }
 
 
 
@@ -144,7 +91,7 @@ public class Parser {
         while ((tmp=in.readLine())!=null) {
 
             if (tmp.length() == 0) continue;
-            else if (tmp.charAt(0) >= '0' && tmp.charAt(0) <= '9') {
+            else if (tmp.charAt(0) >= '0' && tmp.charAt(0) <= '9' || tmp.charAt(0) == '(') {
                 res = tmp;
                 break;
             }
