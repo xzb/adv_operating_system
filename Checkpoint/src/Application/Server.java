@@ -9,8 +9,6 @@ public class Server {
 
     enum MESSAGE {
         APPLICATION("APPLICATION"),
-        FREEZE_SEND("FREEZE_SEND"),
-        FREEZE_COMPLETE("FREEZE_COMPLETE"),
         UNFREEZE("UNFREEZE"),
         REPLY("REPLY"),
         CHECKPOINT("CHECKPOINT"),
@@ -56,42 +54,60 @@ public class Server {
      *********************************************/
     protected void checkMessage(String arMessage)
     {
-        // fromNodeId; scalarTime; messageType
+        // fromNodeId; piggyback; messageType
         String[] parts = arMessage.split(";");
         int fromNodeId = Integer.valueOf(parts[0]);
-        String vectorTime = parts[1];
+        int piggyback = Integer.valueOf(parts[1]);
         String mType = parts[2];
-
 
 
         if (mType.equals(MESSAGE.APPLICATION.getT()))
         {
-            // todo update vector time
-            receiveApplication(fromNodeId);
-        }
-        else if (mType.equals(MESSAGE.FREEZE_SEND.getT()))
-        {
-        }
-        else if (mType.equals(MESSAGE.FREEZE_COMPLETE.getT()))
-        {
-        }
-        else if (mType.equals(MESSAGE.UNFREEZE.getT()))
-        {
-        }
-        else if (mType.equals(MESSAGE.REPLY.getT()))
-        {
+            receiveApplication(fromNodeId, piggyback);
         }
         else if (mType.equals(MESSAGE.CHECKPOINT.getT()))
         {
+            receiveCheckpoint(fromNodeId);
         }
         else if (mType.equals(MESSAGE.RECOVERY.getT()))
         {
+            receiveRecovery(fromNodeId);
+        }
+        else if (mType.equals(MESSAGE.REPLY.getT()))
+        {
+            receiveReply(fromNodeId);
+        }
+        else if (mType.equals(MESSAGE.UNFREEZE.getT()))
+        {
+            receiveUnfreeze(fromNodeId);
         }
     }
 
-    public void receiveApplication(int fromNodeId)
+    // update receive clock, LLR
+    public void receiveApplication(int fromNodeId, int label)
     {
         obNode.clock[fromNodeId]++;
+        obNode.LLR[fromNodeId] = label;         // label is monotonically increasing
+
+    }
+
+    public void receiveCheckpoint(int fromNodeId)
+    {
+
+    }
+    public void receiveRecovery(int fromNodeId)
+    {
+
+    }
+    public void receiveReply(int fromNodeId)
+    {
+
+    }
+
+    // confirm checkpoint
+    // todo update LLS, reset FLS, LLR
+    public void receiveUnfreeze(int fromNodeId)
+    {
 
     }
 }

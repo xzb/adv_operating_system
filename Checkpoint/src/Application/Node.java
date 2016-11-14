@@ -19,7 +19,7 @@ public class Node {
     public int[] LLS;
     public List<Integer> checkpoints;
 
-    private static Map<Integer, Node> nodePool;
+    private static Map<Integer, Node> nodePool;             // singleton
 
     private Node(int nid){
 

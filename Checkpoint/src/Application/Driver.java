@@ -1,7 +1,6 @@
 package Application;
 
 import Tool.Parser;
-import Tool.SocketManager;
 
 /**
  * Created by xiezebin on 11/13/16.
@@ -44,7 +43,7 @@ public class Driver {
 
         // start random message and checkpoint
         randomMessage.nextMessage();
-        checkpoint.nextCheckpoint();
+        checkpoint.nextOperation();
 
     }
 }

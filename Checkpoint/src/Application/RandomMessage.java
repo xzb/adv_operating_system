@@ -43,8 +43,17 @@ public class RandomMessage
             int neiId = obNode.cohort.get(randIndex);
             Node neiNode = Node.getNode(neiId);
 
-            if(!TwoPhaseSnapshot.isFreeze()) {
-                SocketManager.send(neiNode.hostname, neiNode.port, obNode.id, Server.MESSAGE.APPLICATION.getT());
+            if(!TwoPhaseSnapshot.isFreeze()) {          //todo lock to prevent receive freeze
+                // update send clock, FLS
+                obNode.clock[obNode.id]++;
+                int clock = obNode.clock[obNode.id];
+                if (obNode.FLS[neiId] == 0)
+                {
+                    obNode.FLS[neiId] = clock;      // assign first message after checkpoint
+                }
+
+                // Application piggyback clock as label
+                SocketManager.send(neiNode.hostname, neiNode.port, obNode.id, clock, Server.MESSAGE.APPLICATION.getT());
                 remainNumMsg--;
 
                 nextMessage();          // loop until freeze

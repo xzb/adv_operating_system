@@ -1,7 +1,6 @@
 package Application;
 
 import Tool.Parser;
-import Tool.SocketManager;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -21,7 +20,7 @@ public class Checkpoint {
         operationList = new LinkedList<>(Parser.operationList);
     }
 
-    public void nextCheckpoint()
+    public void nextOperation()
     {
         if (remainNumOperation > 0)
         {
@@ -37,7 +36,7 @@ public class Checkpoint {
             handleOperationList();
             remainNumOperation--;
 
-            nextCheckpoint();
+            nextOperation();
         }
     }
 
