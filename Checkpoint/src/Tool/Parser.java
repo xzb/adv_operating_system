@@ -7,12 +7,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 public class Parser {
 
     public static String config = "config.txt";
+
+    private static Parser ps = new Parser();             // initial everything
 
     public static int numNodes;
     public static int numOperations;
@@ -20,10 +21,10 @@ public class Parser {
     public static int minSendDelay;
     public static int numRandomMessages;
 
-    public String[] hostnames;
-    public int[] ports;
-    public HashMap<Integer,ArrayList<Integer>> cohorts;
-    public List<String> operationList;
+    public static String[] hostnames;
+    public static int[] ports;
+    public static HashMap<Integer,ArrayList<Integer>> cohorts;
+    public static List<String> operationList;
 
     public Parser()
     {
@@ -42,10 +43,10 @@ public class Parser {
             minInstanceDelay = Integer.parseInt(tmp[2]);
             minSendDelay = Integer.parseInt(tmp[3]);
             numRandomMessages = Integer.parseInt(tmp[4]);
-            this.hostnames = new String[numNodes];
-            this.ports = new int[numNodes];
-            this.cohorts = new HashMap<Integer,ArrayList<Integer>>();
-            this.operationList = new ArrayList<String>();
+            hostnames = new String[numNodes];
+            ports = new int[numNodes];
+            cohorts = new HashMap<Integer,ArrayList<Integer>>();
+            operationList = new ArrayList<String>();
 
             // scan hostnames and ports
             for (int i = 0; i < numNodes; i++) {

@@ -12,7 +12,9 @@ public class Server {
         FREEZE_SEND("FREEZE_SEND"),
         FREEZE_COMPLETE("FREEZE_COMPLETE"),
         UNFREEZE("UNFREEZE"),
-        REPLY("REPLY");
+        REPLY("REPLY"),
+        CHECKPOINT("CHECKPOINT"),
+        RECOVERY("RECOVERY");
 
         private String title;
         private MESSAGE(String arTitle) {
@@ -48,9 +50,6 @@ public class Server {
         new Thread(launch).start();
     }
 
-    public interface ServerCallback {
-        void call(String message);
-    }
 
     /*********************************************
      * when receive message, check type and dispatch event
@@ -63,11 +62,12 @@ public class Server {
         String vectorTime = parts[1];
         String mType = parts[2];
 
-        // todo update vector time
 
 
         if (mType.equals(MESSAGE.APPLICATION.getT()))
         {
+            // todo update vector time
+            receiveApplication(fromNodeId);
         }
         else if (mType.equals(MESSAGE.FREEZE_SEND.getT()))
         {
@@ -81,5 +81,17 @@ public class Server {
         else if (mType.equals(MESSAGE.REPLY.getT()))
         {
         }
+        else if (mType.equals(MESSAGE.CHECKPOINT.getT()))
+        {
+        }
+        else if (mType.equals(MESSAGE.RECOVERY.getT()))
+        {
+        }
+    }
+
+    public void receiveApplication(int fromNodeId)
+    {
+        obNode.clock[fromNodeId]++;
+
     }
 }

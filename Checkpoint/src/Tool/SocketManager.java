@@ -21,9 +21,9 @@ import com.sun.nio.sctp.MessageInfo;
 public class SocketManager {
     public static boolean SOCKET_BY_SCTP = false;
 
-    public static void send(String arHostname, int arPort, int fromNodeId, String vectorTime, String arMsg) {
+    public static void send(String arHostname, int arPort, int fromNodeId, String arMsg) {  //String vectorTime
         //System.out.println(fromNodeId+" send :" + arMsg + ";");
-        String message = fromNodeId + ";" + vectorTime + ";" + arMsg;
+        String message = fromNodeId + ";" + arMsg;
         if (SOCKET_BY_SCTP) {
             SocketManager.sendBySCTP(arHostname, arPort, message);
         } else {

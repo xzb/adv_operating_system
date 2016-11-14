@@ -11,16 +11,14 @@ import java.util.Random;
 public class RandomMessage
 {
     private Node obNode;
-    private boolean freezeSendFlag;
-    private boolean freezeCompleteFlag;
     private int remainNumMsg;
+    public boolean isStop;
 
     public RandomMessage(int nid)
     {
         obNode = Node.getNode(nid);
-        freezeSendFlag = false;
-        freezeCompleteFlag = false;
         remainNumMsg = Parser.numRandomMessages;
+        isStop = false;
     }
 
     /*
@@ -45,9 +43,15 @@ public class RandomMessage
             int neiId = obNode.cohort.get(randIndex);
             Node neiNode = Node.getNode(neiId);
 
-            if(!freezeSendFlag && !freezeCompleteFlag) {
-                SocketManager.send(neiNode.hostname, neiNode.port, obNode.id, obNode.clockstr(), Server.MESSAGE.APPLICATION.getT());
+            if(!TwoPhaseSnapshot.isFreeze()) {
+                SocketManager.send(neiNode.hostname, neiNode.port, obNode.id, Server.MESSAGE.APPLICATION.getT());
                 remainNumMsg--;
+
+                nextMessage();          // loop until freeze
+            }
+            else
+            {
+                isStop = true;
             }
         }
     }
@@ -56,12 +60,4 @@ public class RandomMessage
     /*
     * interact function with TwoPhaseSnapshot
     */
-    public void freezeSend()
-    {
-
-    }
-    public void freezeComplete()
-    {
-
-    }
 }

@@ -8,8 +8,6 @@ import java.util.*;
  * Created by xiezebin on 11/12/16.
  */
 public class Node {
-    public static Parser ps;
-
     public int id;
     public String hostname;
     public int port;
@@ -24,16 +22,12 @@ public class Node {
     private static Map<Integer, Node> nodePool;
 
     private Node(int nid){
-        if (ps == null)             // only one call is needed
-        {
-            ps = new Parser();
-        }
 
         // initial node fields
         this.id = nid;
-        this.hostname = ps.hostnames[nid];
-        this.port = ps.ports[nid];
-        this.cohort = ps.cohorts.get(nid);
+        this.hostname = Parser.hostnames[nid];
+        this.port = Parser.ports[nid];
+        this.cohort = Parser.cohorts.get(nid);
 
         clock = new int[Parser.numNodes];
         //int numNeighbor = ps.cohorts.get(nid).size();     // FLS, LLR, LLS entry num = numNodes
@@ -57,6 +51,7 @@ public class Node {
         return nodePool.get(nid);
     }
 
+    /*
     public String clockstr()
     {
         String str = "";
@@ -67,4 +62,9 @@ public class Node {
         str = str.substring(0, str.length() - 1);
         return str;
     }
+    public void receiveClock(String clockstr, int fromNodeId)
+    {
+        String[] parts = clockstr.split(",");
+
+    }*/
 }
