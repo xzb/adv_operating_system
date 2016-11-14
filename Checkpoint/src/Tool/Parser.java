@@ -14,14 +14,15 @@ public class Parser {
 
     public static String config = "config.txt";
 
-    public int numNodes;
-    public int numOperations;
-    public int minInstanceDelay;
-    public int minSendDelay;
-    public int numRandomMessages;
+    public static int numNodes;
+    public static int numOperations;
+    public static int minInstanceDelay;
+    public static int minSendDelay;
+    public static int numRandomMessages;
+
     public String[] hostnames;
     public int[] ports;
-    public HashMap<Integer,HashSet<Integer>> cohorts;
+    public HashMap<Integer,ArrayList<Integer>> cohorts;
     public List<String> operationList;
 
     public Parser()
@@ -36,14 +37,14 @@ public class Parser {
 
             // scan first line
             String[] tmp = skipLines(in).split(" ");
-            this.numNodes = Integer.parseInt(tmp[0]);
-            this.numOperations = Integer.parseInt(tmp[1]);
-            this.minInstanceDelay = Integer.parseInt(tmp[2]);
-            this.minSendDelay = Integer.parseInt(tmp[3]);
-            this.numRandomMessages = Integer.parseInt(tmp[4]);
+            numNodes = Integer.parseInt(tmp[0]);
+            numOperations = Integer.parseInt(tmp[1]);
+            minInstanceDelay = Integer.parseInt(tmp[2]);
+            minSendDelay = Integer.parseInt(tmp[3]);
+            numRandomMessages = Integer.parseInt(tmp[4]);
             this.hostnames = new String[numNodes];
             this.ports = new int[numNodes];
-            this.cohorts = new HashMap<Integer,HashSet<Integer>>();
+            this.cohorts = new HashMap<Integer,ArrayList<Integer>>();
             this.operationList = new ArrayList<String>();
 
             // scan hostnames and ports
@@ -53,7 +54,7 @@ public class Parser {
                 int nodeId = Integer.valueOf(tmp2[0]);
                 hostnames[nodeId] = tmp2[1];
                 ports[nodeId] = Integer.parseInt(tmp2[2].replaceAll(" ",""));
-                cohorts.put(nodeId, new HashSet<Integer>());
+                cohorts.put(nodeId, new ArrayList<Integer>());
 
             }
 

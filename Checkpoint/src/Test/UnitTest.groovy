@@ -14,23 +14,22 @@ class UnitTest {
     private Node node;
     private RandomMessage randomMessage;
     private TwoPhaseSnapshot twoPhaseSnapshot;
-    private Checkpointing checkpointing;
-    private Recovery recovery;
+    private Checkpoint checkpoint;
 
 
     @Before
     public void setup() {
         ps = new Parser();
-        node = new Node(0);
-        randomMessage = new RandomMessage();
+        node = Node.getNode(0);
+        randomMessage = new RandomMessage(0);
         twoPhaseSnapshot = new TwoPhaseSnapshot();
-        checkpointing = new Checkpointing();
-        recovery = new Recovery();
+        checkpoint = new Checkpoint();
     }
 
 
     @Test
     public void testParser() {
+        assertEquals("cohort size of node 0:", 2, node.cohort.size())
         assertEquals("cohortMap size:", ps.numNodes, ps.cohorts.size())
         assertEquals("operationList size:", ps.numOperations, ps.operationList.size())
     }
