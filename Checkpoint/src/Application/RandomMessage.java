@@ -28,6 +28,8 @@ public class RandomMessage
     */
     public void nextMessage()
     {
+        isStop = false;
+
         if (remainNumMsg > 0)
         {
             Random rand = new Random();
@@ -43,7 +45,7 @@ public class RandomMessage
             int neiId = obNode.cohort.get(randIndex);
             Node neiNode = Node.getNode(neiId);
 
-            if(!TwoPhaseSnapshot.isFreeze()) {          //todo lock to prevent receive freeze
+            if(!Checkpoint.isFreeze()) {          //todo lock to prevent receive freeze
                 // update send clock, FLS
                 obNode.clock[obNode.id]++;
                 int clock = obNode.clock[obNode.id];
@@ -65,6 +67,15 @@ public class RandomMessage
         }
     }
 
+
+    // update receive clock, LLR
+    public static void receiveApplication(int nodeId, int fromNodeId, int label)
+    {
+        Node node = Node.getNode(nodeId);
+        node.clock[fromNodeId]++;
+        node.LLR[fromNodeId] = label;         // label is monotonically increasing
+
+    }
 
     /*
     * interact function with TwoPhaseSnapshot

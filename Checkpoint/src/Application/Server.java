@@ -9,10 +9,15 @@ public class Server {
 
     enum MESSAGE {
         APPLICATION("APPLICATION"),
-        UNFREEZE("UNFREEZE"),
-        REPLY("REPLY"),
+
         CHECKPOINT("CHECKPOINT"),
-        RECOVERY("RECOVERY");
+        RECOVERY("RECOVERY"),
+        UNFREEZE("UNFREEZE"),
+
+        FREEZE_REPLY("FREEZE_REPLY"),
+        UNFREEZE_REPLY("UNFREEZE_REPLY"),
+
+        OPERATION_COMPLETE("OPERATION_COMPLETE");
 
         private String title;
         private MESSAGE(String arTitle) {
@@ -63,51 +68,35 @@ public class Server {
 
         if (mType.equals(MESSAGE.APPLICATION.getT()))
         {
-            receiveApplication(fromNodeId, piggyback);
+            RandomMessage.receiveApplication(obNode.id, fromNodeId, piggyback);
         }
         else if (mType.equals(MESSAGE.CHECKPOINT.getT()))
         {
-            receiveCheckpoint(fromNodeId);
+            Checkpoint.receiveCheckpoint(obNode.id, fromNodeId, piggyback);
         }
         else if (mType.equals(MESSAGE.RECOVERY.getT()))
         {
-            receiveRecovery(fromNodeId);
-        }
-        else if (mType.equals(MESSAGE.REPLY.getT()))
-        {
-            receiveReply(fromNodeId);
+            Checkpoint.receiveRecovery(obNode.id, fromNodeId, piggyback);
         }
         else if (mType.equals(MESSAGE.UNFREEZE.getT()))
         {
-            receiveUnfreeze(fromNodeId);
+            Checkpoint.receiveUnfreeze(obNode.id, fromNodeId);
+        }
+        else if (mType.equals(MESSAGE.FREEZE_REPLY.getT()))
+        {
+            Checkpoint.receiveFreezeReply(obNode.id, fromNodeId);
+        }
+        else if (mType.equals(MESSAGE.UNFREEZE_REPLY.getT()))
+        {
+            Checkpoint.receiveUnfreezeReply(obNode.id, fromNodeId);
+        }
+        else if (mType.equals(MESSAGE.OPERATION_COMPLETE.getT()))
+        {
+            Checkpoint.receiveOperationComplete(obNode.id, fromNodeId);
         }
     }
 
-    // update receive clock, LLR
-    public void receiveApplication(int fromNodeId, int label)
-    {
-        obNode.clock[fromNodeId]++;
-        obNode.LLR[fromNodeId] = label;         // label is monotonically increasing
 
-    }
 
-    public void receiveCheckpoint(int fromNodeId)
-    {
 
-    }
-    public void receiveRecovery(int fromNodeId)
-    {
-
-    }
-    public void receiveReply(int fromNodeId)
-    {
-
-    }
-
-    // confirm checkpoint
-    // todo update LLS, reset FLS, LLR
-    public void receiveUnfreeze(int fromNodeId)
-    {
-
-    }
 }
