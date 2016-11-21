@@ -45,7 +45,7 @@ public class RandomMessage
             int neiId = obNode.cohort.get(randIndex);
             Node neiNode = Node.getNode(neiId);
 
-            if(!Checkpoint.isFreeze()) {          //todo lock to prevent receive freeze
+            if(!Checkpoint.ins(obNode.id).isFreeze()) {          //todo lock to prevent receive freeze
                 // update send clock, FLS
                 obNode.clock[obNode.id]++;
                 int clock = obNode.clock[obNode.id];
@@ -77,7 +77,5 @@ public class RandomMessage
 
     }
 
-    /*
-    * interact function with TwoPhaseSnapshot
-    */
+
 }

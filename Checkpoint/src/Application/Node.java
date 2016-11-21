@@ -51,20 +51,4 @@ public class Node {
         return nodePool.get(nid);
     }
 
-    /*
-    public String clockstr()
-    {
-        String str = "";
-        for(int c : clock)
-        {
-            str = str + c + ',';
-        }
-        str = str.substring(0, str.length() - 1);
-        return str;
-    }
-    public void receiveClock(String clockstr, int fromNodeId)
-    {
-        String[] parts = clockstr.split(",");
-
-    }*/
 }

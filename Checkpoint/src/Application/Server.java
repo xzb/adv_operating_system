@@ -72,27 +72,27 @@ public class Server {
         }
         else if (mType.equals(MESSAGE.CHECKPOINT.getT()))
         {
-            Checkpoint.receiveCheckpoint(obNode.id, fromNodeId, piggyback);
+            Checkpoint.ins(obNode.id).receiveCheckpoint(fromNodeId, piggyback);
         }
         else if (mType.equals(MESSAGE.RECOVERY.getT()))
         {
-            Checkpoint.receiveRecovery(obNode.id, fromNodeId, piggyback);
+            Checkpoint.ins(obNode.id).receiveRecovery(fromNodeId, piggyback);
         }
         else if (mType.equals(MESSAGE.UNFREEZE.getT()))
         {
-            Checkpoint.receiveUnfreeze(obNode.id, fromNodeId);
+            Checkpoint.ins(obNode.id).receiveUnfreeze(fromNodeId);
         }
         else if (mType.equals(MESSAGE.FREEZE_REPLY.getT()))
         {
-            Checkpoint.receiveFreezeReply(obNode.id, fromNodeId);
+            Checkpoint.ins(obNode.id).receiveFreezeReply(fromNodeId);
         }
         else if (mType.equals(MESSAGE.UNFREEZE_REPLY.getT()))
         {
-            Checkpoint.receiveUnfreezeReply(obNode.id, fromNodeId);
+            Checkpoint.ins(obNode.id).receiveUnfreezeReply(fromNodeId);
         }
         else if (mType.equals(MESSAGE.OPERATION_COMPLETE.getT()))
         {
-            Checkpoint.receiveOperationComplete(obNode.id, fromNodeId);
+            Checkpoint.ins(obNode.id).receiveOperationComplete(fromNodeId);
         }
     }
 

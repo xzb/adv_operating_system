@@ -45,12 +45,14 @@ class UnitTest {
         assertEquals("LLS of node 0:", 0, node.LLS[1])
     }
 
-    @Test
-    public void testTwoPhaseSnapshot() {
-    }
 
     @Test
     public void testCheckpoint() {
+
+    }
+
+    @Test
+    public void testRecovery() {
 
     }
 }

@@ -33,7 +33,7 @@ public class Driver {
         // initialize objects
         server = new Server(nid);
         randomMessage = new RandomMessage(nid);
-        checkpoint = new Checkpoint(nid);
+        checkpoint = Checkpoint.ins(nid);
 
         // wait 10 seconds to let all servers ready
         try {

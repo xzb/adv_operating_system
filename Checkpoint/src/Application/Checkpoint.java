@@ -3,9 +3,7 @@ package Application;
 import Tool.Parser;
 import Tool.SocketManager;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Created by xiezebin on 11/12/16.
@@ -15,16 +13,39 @@ public class Checkpoint {
     private Node obNode;
     private List<String> operationList;
 
-    private static boolean freezeSendFlag;          // todo use static lock
-    private static boolean freezeCompleteFlag;
+    private int sequenceNum;
+    private boolean freezeSendFlag;          // todo use static lock
+    private boolean freezeCompleteFlag;
 
+    private boolean willingToCheckpoint;
+    private Set<Integer> currentCohort;
+    private Set<Integer> replyFromCohort;
+    private int initiator;
 
-    public Checkpoint(int nid)
+    private static Map<Integer, Checkpoint> obInstances;
+    public static Checkpoint ins(int nid)
+    {
+        if (obInstances == null)
+        {
+            obInstances = new HashMap<Integer, Checkpoint>();
+        }
+        if (!obInstances.containsKey(nid))
+        {
+            Checkpoint ckpt = new Checkpoint(nid);
+            obInstances.put(nid, ckpt);
+        }
+        return obInstances.get(nid);
+    }
+    private Checkpoint(int nid)
     {
         obNode = Node.getNode(nid);
         operationList = new LinkedList<>(Parser.operationList);
+        sequenceNum = 0;
+        willingToCheckpoint = true;
+        currentCohort = new HashSet<Integer>();
+        replyFromCohort = new HashSet<Integer>();
     }
-    public static boolean isFreeze()
+    public boolean isFreeze()
     {
         return freezeSendFlag || freezeCompleteFlag;
     }
@@ -85,57 +106,90 @@ public class Checkpoint {
      */
     private void initiateCheckpoint()
     {
+
+        initiator = obNode.id;
+        takeTentativeCheckpointAndRequestCohorts();
+
+    }
+    public void receiveCheckpoint(int fromNodeId, int llr)
+    {
+        initiator = fromNodeId;
+        int fls = obNode.FLS[fromNodeId];
+        if (willingToCheckpoint && fls > 0 && llr >= fls)
+        {
+            // todo forward checkpoint message, how to exclude initiator?
+
+
+            takeTentativeCheckpointAndRequestCohorts();
+        }
+
+        // wait for all replies from all current cohorts, then reply to fromNodeId (initiator)
+        // todo reply, how to make sure each node reply to initiator?
+        //Node fromNode = Node.getNode(fromNodeId);
+        //SocketManager.send(fromNode.hostname, fromNode.port, nodeId, 0, Server.MESSAGE.FREEZE_REPLY.getT());
+
+
+        // base case
+        if (currentCohort.size() == 0)
+        {
+            Node fromNode = Node.getNode(fromNodeId);
+            SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.FREEZE_REPLY.getT());
+        }
+
+    }
+
+    public void takeTentativeCheckpointAndRequestCohorts()
+    {
         // mark tentative checkpoint
+        sequenceNum++;
         int[] cpClock = new int[Parser.numNodes];
         System.arraycopy(obNode.clock, 0, cpClock, 0, Parser.numNodes);
         obNode.checkpoints.add(cpClock);
 
+
+        // todo calculate current cohort
         List<Integer> cohort = obNode.cohort;
         for (int neiId : cohort)
         {
             int llr = obNode.LLR[neiId];
             if (llr > 0)
             {
+                currentCohort.add(neiId);
                 Node neiNode = Node.getNode(neiId);
                 SocketManager.send(neiNode.hostname, neiNode.port, obNode.id, llr, Server.MESSAGE.CHECKPOINT.getT());
                 obNode.LLR[neiId] = 0;          // reset LLR
             }
+
+            obNode.FLS[neiId] = 0;              // reset FLS, will not take another tentative checkpoint
         }
-
     }
-    public static void receiveCheckpoint(int nodeId, int fromNodeId, int llr)
-    {
-        Node node = Node.getNode(nodeId);
-        int fls = node.FLS[fromNodeId];
-        if (fls > 0 && llr >= fls)
-        {
-            // todo forward checkpoint message,
 
-
-        }
-        // todo reply
-
-    }
 
     /**
-     * Recovery
-     */
-    private void initiateRecovery()
-    {
-
-    }
-    public static void receiveRecovery(int nodeId, int fromNodeId, int lls)
-    {
-
-    }
-
-    /**
-     * Reply message back to initiator,
+     * Reply message to nodes who send the checkpoint message,
      * If received replies from all cohorts, start unFreeze()
      */
-    public static void receiveFreezeReply(int nodeId, int fromNodeId)
+    public void receiveFreezeReply(int fromNodeId)
     {
+        // todo forever broadcast
+        replyFromCohort.add(fromNodeId);
+        if (replyFromCohort.size() == obNode.cohort.size())
+        {
+            Set<Integer> cp = new HashSet<>(obNode.cohort);
+            if (replyFromCohort.equals(cp))
+            {
+                // todo initiator should send unfreeze after receive reply from all
+                if (initiator == obNode.id)
+                {
 
+                }
+                else
+                {
+                    Node initNode = Node.getNode(initiator);
+                    SocketManager.send(initNode.hostname, initNode.port, obNode.id, 0, Server.MESSAGE.FREEZE_REPLY.getT());
+                }
+            }
+        }
     }
 
     /**
@@ -143,7 +197,7 @@ public class Checkpoint {
      * confirm checkpoint or recovery
      * todo update LLS, reset FLS, LLR
      */
-    private static void unFreeze()
+    private void unFreeze()
     {
         freezeSendFlag = false;
         freezeCompleteFlag = false;
@@ -159,14 +213,14 @@ public class Checkpoint {
         // todo notify next initiator
     }
 
-    public static void receiveUnfreeze(int nodeId, int fromNodeId)
+    public void receiveUnfreeze(int fromNodeId)
     {
 
     }
     /**
      * If received replies from all cohorts, send operationComplete to notify next initiator
      */
-    public static void receiveUnfreezeReply(int nodeId, int fromNodeId)
+    public void receiveUnfreezeReply(int fromNodeId)
     {
 
     }
@@ -174,8 +228,23 @@ public class Checkpoint {
     /**
      * When received this message, it schedules start nextOperation
      */
-    public static void receiveOperationComplete(int nodeId, int fromNodeId)
+    public void receiveOperationComplete(int fromNodeId)
     {
 
     }
+
+
+
+    /**
+     * Recovery
+     */
+    private void initiateRecovery()
+    {
+
+    }
+    public void receiveRecovery(int fromNodeId, int lls)
+    {
+
+    }
+
 }
