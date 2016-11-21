@@ -49,6 +49,8 @@ public class Daemon {
 
             if (obNodeId == opId)       // proceed if top of operationList is current node
             {
+                System.out.println("Initiator node: " + obNodeId);
+
                 // exponential delay
                 Random rand = new Random();
                 double delayLambda = 1.0 / Parser.minSendDelay;
@@ -65,7 +67,7 @@ public class Daemon {
                 }
                 else if (opType == 'r')
                 {
-                    //todo Recovery.ins(obNodeId).initiateRecovery();
+                    Recovery.ins(obNodeId).initiateRecovery();
                 }
             }
         }

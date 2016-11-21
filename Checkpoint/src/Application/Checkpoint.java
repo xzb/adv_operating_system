@@ -67,7 +67,7 @@ public class Checkpoint {
         // base case
         if (currentCohort.size() == 0)
         {
-            unFreeze();
+            sendCheckpointConfirm();
         }
     }
 
@@ -99,7 +99,7 @@ public class Checkpoint {
         if (currentCohort.size() == 0 || (willingToCheckpoint && fls == 0))
         {
             Node fromNode = Node.getNode(fromNodeId);
-            SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.FREEZE_REPLY.getT());
+            SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.CHECKPOINT_REPLY.getT());
             requestSet.remove(fromNodeId);      // prevent duplicate reply
         }
 
@@ -134,23 +134,23 @@ public class Checkpoint {
 
     /**
      * receive REPLY message
-     * If received replies from all cohorts, start unFreeze() or REPLY to request node
+     * If received replies from all cohorts, start sendCheckpointConfirm() or REPLY to request node
      */
-    public void receiveFreezeReply(int fromNodeId)
+    public void receiveCheckpointReply(int fromNodeId)
     {
         replyFromCohort.add(fromNodeId);
         if (replyFromCohort.equals(currentCohort))  // wait for all replies from all current cohorts
         {
             if (initiatorFlag)      // initiator should send unfreeze after receive reply from all
             {
-                unFreeze();
+                sendCheckpointConfirm();
             }
             else                    // reply to request node
             {
                 for (int requestId : requestSet)
                 {
                     Node reqNode = Node.getNode(requestId);
-                    SocketManager.send(reqNode.hostname, reqNode.port, obNode.id, 0, Server.MESSAGE.FREEZE_REPLY.getT());
+                    SocketManager.send(reqNode.hostname, reqNode.port, obNode.id, 0, Server.MESSAGE.CHECKPOINT_REPLY.getT());
                 }
                 requestSet.clear();
             }
@@ -164,7 +164,7 @@ public class Checkpoint {
      * confirm checkpoint or recovery
      * todo update LLS, reset FLS, LLR
      */
-    private void unFreeze()
+    private void sendCheckpointConfirm()
     {
         if (!isFreezeComplete)          // prevent duplicate unfreeze
         {
@@ -182,27 +182,27 @@ public class Checkpoint {
         for (int cohortId : currentCohort)
         {
             Node cohNode = Node.getNode(cohortId);
-            SocketManager.send(cohNode.hostname, cohNode.port, obNode.id, 0, Server.MESSAGE.UNFREEZE.getT());
+            SocketManager.send(cohNode.hostname, cohNode.port, obNode.id, 0, Server.MESSAGE.CHECKPOINT_CONFIRM.getT());
         }
 
 
         // todo notify next initiator
     }
 
-    public void receiveUnfreeze(int fromNodeId)
+    public void receiveCheckpointConfirm(int fromNodeId)
     {
         // propagate unfreeze message
-        unFreeze();
+        sendCheckpointConfirm();
 
         // send REPLY to fromNodeId, todo reply until receive all replies from cohorts
         Node fromNode = Node.getNode(fromNodeId);
-        SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.UNFREEZE_REPLY.getT());
+        SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.CHECKPOINT_CONFIRM_REPLY.getT());
 
     }
     /**
      * If received replies from all cohorts, send operationComplete to notify next initiator
      */
-    public void receiveUnfreezeReply(int fromNodeId)
+    public void receiveCheckpointConfirmReply(int fromNodeId)
     {
         replyFromCohort.add(fromNodeId);
         if (replyFromCohort.equals(currentCohort))

@@ -11,11 +11,14 @@ public class Server {
         APPLICATION("APPLICATION"),
 
         CHECKPOINT("CHECKPOINT"),
-        RECOVERY("RECOVERY"),
-        UNFREEZE("UNFREEZE"),
+        CHECKPOINT_CONFIRM("CHECKPOINT_CONFIRM"),
+        CHECKPOINT_REPLY("CHECKPOINT_REPLY"),
+        CHECKPOINT_CONFIRM_REPLY("CHECKPOINT_CONFIRM_REPLY"),
 
-        FREEZE_REPLY("FREEZE_REPLY"),
-        UNFREEZE_REPLY("UNFREEZE_REPLY"),
+        RECOVERY("RECOVERY"),
+        RECOVERY_CONFIRM("RECOVERY_CONFIRM"),
+        RECOVERY_REPLY("RECOVERY_REPLY"),
+        RECOVERY_CONFIRM_REPLY("RECOVERY_CONFIRM_REPLY"),
 
         OPERATION_COMPLETE("OPERATION_COMPLETE");
 
@@ -70,29 +73,44 @@ public class Server {
         {
             RandomMessage.receiveApplication(obNode.id, fromNodeId, piggyback);
         }
+
         else if (mType.equals(MESSAGE.CHECKPOINT.getT()))
         {
             Checkpoint.ins(obNode.id).receiveCheckpoint(fromNodeId, piggyback);
         }
+        else if (mType.equals(MESSAGE.CHECKPOINT_CONFIRM.getT()))
+        {
+            Checkpoint.ins(obNode.id).receiveCheckpointConfirm(fromNodeId);
+        }
+        else if (mType.equals(MESSAGE.CHECKPOINT_REPLY.getT()))
+        {
+            Checkpoint.ins(obNode.id).receiveCheckpointReply(fromNodeId);
+        }
+        else if (mType.equals(MESSAGE.CHECKPOINT_CONFIRM_REPLY.getT()))
+        {
+            Checkpoint.ins(obNode.id).receiveCheckpointConfirmReply(fromNodeId);
+        }
+
         else if (mType.equals(MESSAGE.RECOVERY.getT()))
         {
-            //Checkpoint.ins(obNode.id).receiveRecovery(fromNodeId, piggyback);
+            Recovery.ins(obNode.id).receiveRecovery(fromNodeId, piggyback);
         }
-        else if (mType.equals(MESSAGE.UNFREEZE.getT()))
+        else if (mType.equals(MESSAGE.RECOVERY_CONFIRM.getT()))
         {
-            Checkpoint.ins(obNode.id).receiveUnfreeze(fromNodeId);
+            Recovery.ins(obNode.id).receiveRecoveryConfirm(fromNodeId);
         }
-        else if (mType.equals(MESSAGE.FREEZE_REPLY.getT()))
+        else if (mType.equals(MESSAGE.RECOVERY_REPLY.getT()))
         {
-            Checkpoint.ins(obNode.id).receiveFreezeReply(fromNodeId);
+            Recovery.ins(obNode.id).receiveRecoveryReply(fromNodeId);
         }
-        else if (mType.equals(MESSAGE.UNFREEZE_REPLY.getT()))
+        else if (mType.equals(MESSAGE.RECOVERY_CONFIRM_REPLY.getT()))
         {
-            Checkpoint.ins(obNode.id).receiveUnfreezeReply(fromNodeId);
+            Recovery.ins(obNode.id).receiveRecoveryConfirmReply(fromNodeId);
         }
+
         else if (mType.equals(MESSAGE.OPERATION_COMPLETE.getT()))
         {
-            //Checkpoint.ins(obNode.id).receiveOperationComplete(fromNodeId);
+            Daemon.ins(obNode.id).receiveOperationComplete(fromNodeId);
         }
     }
 

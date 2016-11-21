@@ -1,12 +1,34 @@
 package Application;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Created on 11/20/16.
  */
 public class Recovery {
+    private Node obNode;
 
+    private static Map<Integer, Recovery> obInstances;
+    public static Recovery ins(int nid)
+    {
+        if (obInstances == null)
+        {
+            obInstances = new HashMap<Integer, Recovery>();
+        }
+        if (!obInstances.containsKey(nid))
+        {
+            Recovery rv = new Recovery(nid);
+            obInstances.put(nid, rv);
+        }
+        return obInstances.get(nid);
+    }
+    private Recovery(int nid)
+    {
+        obNode = Node.getNode(nid);
+    }
 
-    private void initiateRecovery()
+    public void initiateRecovery()
     {
 
     }
@@ -19,7 +41,7 @@ public class Recovery {
      * Reply message to nodes who send the recovery message,
      * If received replies from all cohorts, start unFreeze()
      */
-    public void receiveFreezeReply(int fromNodeId)
+    public void receiveRecoveryReply(int fromNodeId)
     {
 
     }
@@ -28,12 +50,12 @@ public class Recovery {
      * Second phase
      * confirm checkpoint or recovery
      */
-    private void unFreeze()
+    private void sendRecoveryConfirm()
     {
 
     }
 
-    public void receiveUnfreeze(int fromNodeId)
+    public void receiveRecoveryConfirm(int fromNodeId)
     {
 
     }
@@ -41,7 +63,7 @@ public class Recovery {
     /**
      * If received replies from all cohorts, send operationComplete to notify next initiator
      */
-    public void receiveUnfreezeReply(int fromNodeId)
+    public void receiveRecoveryConfirmReply(int fromNodeId)
     {
 
     }
