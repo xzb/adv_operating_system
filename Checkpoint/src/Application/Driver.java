@@ -29,7 +29,7 @@ public class Driver {
         // initialize objects
         Server server = new Server(nid);
         RandomMessage randomMessage = RandomMessage.ins(nid);
-        Checkpoint checkpoint = Checkpoint.ins(nid);
+        Daemon daemon = Daemon.ins(nid);
 
         // wait 10 seconds to let all servers ready
         try {
@@ -39,7 +39,7 @@ public class Driver {
 
         // start random message and checkpoint
         randomMessage.nextMessage();
-        checkpoint.nextOperation();
+        daemon.nextOperation();
 
     }
 }

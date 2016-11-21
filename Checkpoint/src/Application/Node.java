@@ -51,4 +51,9 @@ public class Node {
         return nodePool.get(nid);
     }
 
+    // get all nodes
+    public static Collection<Node> getAllNodes()
+    {
+        return nodePool.values();
+    }
 }

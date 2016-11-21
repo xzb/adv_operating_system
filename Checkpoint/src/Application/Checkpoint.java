@@ -11,11 +11,10 @@ import java.util.*;
 public class Checkpoint {
 
     private Node obNode;
-    private List<String> operationList;
 
     private int sequenceNum;
     //private boolean freezeSendFlag;          // todo use static lock
-    private boolean freezeCompleteFlag;
+    private boolean isFreezeComplete;
 
     private boolean willingToCheckpoint;
     private Set<Integer> currentCohort;
@@ -40,7 +39,6 @@ public class Checkpoint {
     private Checkpoint(int nid)
     {
         obNode = Node.getNode(nid);
-        operationList = new LinkedList<>(Parser.operationList);
         sequenceNum = 0;
         willingToCheckpoint = true;
         currentCohort = new HashSet<Integer>();
@@ -49,57 +47,8 @@ public class Checkpoint {
     }
     public boolean isFreeze()
     {
-        //return freezeSendFlag || freezeCompleteFlag;
-        return freezeCompleteFlag;
-    }
-
-    public void nextOperation()
-    {
-        if (!operationList.isEmpty())
-        {
-            Random rand = new Random();
-            double delayLambda = 1.0 / Parser.minSendDelay;
-            double delay = Math.log(1 - rand.nextDouble()) / (-delayLambda);
-
-            try {
-                Thread.sleep((int) delay);
-            }
-            catch (Exception e) {}
-
-            handleOperationList();
-
-        }
-    }
-
-    /**
-     * handle top of operation list, if match current node id, initiate checkpoint or recovery
-     */
-    private void handleOperationList()
-    {
-        if (operationList.isEmpty())
-        {
-            return;
-        }
-
-        String opPair = operationList.get(0);
-        String[] parts = opPair.substring(1, opPair.length() - 1).split(",");   // (c,1) => [c, 1]
-        char opType = parts[0].charAt(0);
-        int opId = Integer.valueOf(parts[1]);
-
-        if (obNode.id == opId)
-        {
-            if (opType == 'c')
-            {
-                initiateCheckpoint();
-            }
-            else if (opType == 'r')
-            {
-                initiateRecovery();
-            }
-        }
-
-        // todo when to remove
-        operationList.remove(0);
+        //return freezeSendFlag || isFreezeComplete;
+        return isFreezeComplete;
     }
 
 
@@ -108,11 +57,12 @@ public class Checkpoint {
      * Checkpoint
      * If LLR is not null, send checkpoint message to neighbor id, piggyback llr
      */
-    private void initiateCheckpoint()
+    public void initiateCheckpoint()
     {
 
         initiatorFlag = true;
-        takeTentativeCheckpointAndRequestCohorts();
+        isFreezeComplete = true;
+        takeTentativeCheckpointAndRequestCohorts(obNode.id);
 
         // base case
         if (currentCohort.size() == 0)
@@ -133,13 +83,14 @@ public class Checkpoint {
     public void receiveCheckpoint(int fromNodeId, int llr)
     {
         requestSet.add(fromNodeId);
+        isFreezeComplete = true;
         int fls = obNode.FLS[fromNodeId];
         if (willingToCheckpoint && fls > 0 && llr >= fls)
         {
             // todo forward checkpoint message, how to exclude initiator?
 
 
-            takeTentativeCheckpointAndRequestCohorts();
+            takeTentativeCheckpointAndRequestCohorts(fromNodeId);
         }
 
 
@@ -154,7 +105,7 @@ public class Checkpoint {
 
     }
 
-    public void takeTentativeCheckpointAndRequestCohorts()
+    public void takeTentativeCheckpointAndRequestCohorts(int excludeNodeId)
     {
         // mark tentative checkpoint
         sequenceNum++;
@@ -168,7 +119,7 @@ public class Checkpoint {
         for (int neiId : cohort)
         {
             int llr = obNode.LLR[neiId];
-            if (llr > 0)
+            if (llr > 0 && neiId != excludeNodeId)  // todo can exclude fromNodeId
             {
                 currentCohort.add(neiId);
                 Node neiNode = Node.getNode(neiId);
@@ -204,6 +155,7 @@ public class Checkpoint {
                 requestSet.clear();
             }
 
+            replyFromCohort.clear();
         }
     }
 
@@ -214,17 +166,19 @@ public class Checkpoint {
      */
     private void unFreeze()
     {
-        //freezeSendFlag = false;
-        freezeCompleteFlag = false;
+        if (!isFreezeComplete)          // prevent duplicate unfreeze
+        {
+            return;
+        }
 
-        // todo move to Driver
-        if (RandomMessage.ins(obNode.id).isStop)
+        isFreezeComplete = false;
+        if (RandomMessage.ins(obNode.id).isStop)            // restart random message
         {
             RandomMessage.ins(obNode.id).isStop = false;
             RandomMessage.ins(obNode.id).nextMessage();
         }
 
-        // todo send unfreeze
+        // send unfreeze to cohort
         for (int cohortId : currentCohort)
         {
             Node cohNode = Node.getNode(cohortId);
@@ -237,10 +191,12 @@ public class Checkpoint {
 
     public void receiveUnfreeze(int fromNodeId)
     {
-        freezeCompleteFlag = false;
+        // propagate unfreeze message
+        unFreeze();
 
-        currentCohort.clear();        // todo where to clear
-        replyFromCohort.clear();
+        // send REPLY to fromNodeId, todo reply until receive all replies from cohorts
+        Node fromNode = Node.getNode(fromNodeId);
+        SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.UNFREEZE_REPLY.getT());
 
     }
     /**
@@ -248,29 +204,23 @@ public class Checkpoint {
      */
     public void receiveUnfreezeReply(int fromNodeId)
     {
+        replyFromCohort.add(fromNodeId);
+        if (replyFromCohort.equals(currentCohort))
+        {
+            replyFromCohort.clear();
+            currentCohort.clear();      //todo where
+
+            if (initiatorFlag)
+            {
+                // todo how does next initiator know its turn
+                // send operation complete to all nodes
+                Daemon.ins(obNode.id).broadcastOperationComplete();
+            }
+        }
 
     }
 
-    /**
-     * When received this message, it schedules start nextOperation
-     */
-    public void receiveOperationComplete(int fromNodeId)
-    {
-
-    }
 
 
-
-    /**
-     * Recovery
-     */
-    private void initiateRecovery()
-    {
-
-    }
-    public void receiveRecovery(int fromNodeId, int lls)
-    {
-
-    }
 
 }

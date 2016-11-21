@@ -76,7 +76,7 @@ public class Server {
         }
         else if (mType.equals(MESSAGE.RECOVERY.getT()))
         {
-            Checkpoint.ins(obNode.id).receiveRecovery(fromNodeId, piggyback);
+            //Checkpoint.ins(obNode.id).receiveRecovery(fromNodeId, piggyback);
         }
         else if (mType.equals(MESSAGE.UNFREEZE.getT()))
         {
@@ -92,7 +92,7 @@ public class Server {
         }
         else if (mType.equals(MESSAGE.OPERATION_COMPLETE.getT()))
         {
-            Checkpoint.ins(obNode.id).receiveOperationComplete(fromNodeId);
+            //Checkpoint.ins(obNode.id).receiveOperationComplete(fromNodeId);
         }
     }
 

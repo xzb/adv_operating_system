@@ -12,7 +12,7 @@ import static org.junit.Assert.assertEquals
  */
 class UnitTest {
 
-    Application.Node node = Node.getNode(0);
+    Application.Node node = Application.Node.getNode(0);
 
     @BeforeClass
     public static void setup() {
@@ -50,12 +50,14 @@ class UnitTest {
 
     @Test
     public void testCheckpointSend() {
+        RandomMessage randomMessage0 = RandomMessage.ins(0);
+        randomMessage0.nextMessage();
         RandomMessage randomMessage1 = RandomMessage.ins(1);
         randomMessage1.nextMessage();
         RandomMessage randomMessage2 = RandomMessage.ins(2);
         randomMessage2.nextMessage();
-        Checkpoint checkpoint = Checkpoint.ins(0);
-        checkpoint.nextOperation();
+        Daemon daemon = Daemon.ins(0);
+        daemon.nextOperation();
 
     }
     @Test
