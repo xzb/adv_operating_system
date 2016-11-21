@@ -14,13 +14,14 @@ public class Checkpoint {
     private List<String> operationList;
 
     private int sequenceNum;
-    private boolean freezeSendFlag;          // todo use static lock
+    //private boolean freezeSendFlag;          // todo use static lock
     private boolean freezeCompleteFlag;
 
     private boolean willingToCheckpoint;
     private Set<Integer> currentCohort;
     private Set<Integer> replyFromCohort;
-    private int initiator;
+    private boolean initiatorFlag;
+    private Set<Integer> requestSet;
 
     private static Map<Integer, Checkpoint> obInstances;
     public static Checkpoint ins(int nid)
@@ -44,10 +45,12 @@ public class Checkpoint {
         willingToCheckpoint = true;
         currentCohort = new HashSet<Integer>();
         replyFromCohort = new HashSet<Integer>();
+        requestSet = new HashSet<Integer>();
     }
     public boolean isFreeze()
     {
-        return freezeSendFlag || freezeCompleteFlag;
+        //return freezeSendFlag || freezeCompleteFlag;
+        return freezeCompleteFlag;
     }
 
     public void nextOperation()
@@ -95,6 +98,7 @@ public class Checkpoint {
             }
         }
 
+        // todo when to remove
         operationList.remove(0);
     }
 
@@ -107,13 +111,28 @@ public class Checkpoint {
     private void initiateCheckpoint()
     {
 
-        initiator = obNode.id;
+        initiatorFlag = true;
         takeTentativeCheckpointAndRequestCohorts();
 
+        // base case
+        if (currentCohort.size() == 0)
+        {
+            unFreeze();
+        }
     }
+
+    /**
+     * Logic: when receive checkpoint message from p, check whether should take checkpoint;
+     *        If should take, broadcast request to cohorts (need calculate);
+     *          If cohorts is not empty, wait to receive REPLY message.
+     *          If cohorts is empty, directly REPLY to p.
+     *        If need not take, directly REPLY to p.
+     * @param fromNodeId
+     * @param llr
+     */
     public void receiveCheckpoint(int fromNodeId, int llr)
     {
-        initiator = fromNodeId;
+        requestSet.add(fromNodeId);
         int fls = obNode.FLS[fromNodeId];
         if (willingToCheckpoint && fls > 0 && llr >= fls)
         {
@@ -123,17 +142,14 @@ public class Checkpoint {
             takeTentativeCheckpointAndRequestCohorts();
         }
 
-        // wait for all replies from all current cohorts, then reply to fromNodeId (initiator)
-        // todo reply, how to make sure each node reply to initiator?
-        //Node fromNode = Node.getNode(fromNodeId);
-        //SocketManager.send(fromNode.hostname, fromNode.port, nodeId, 0, Server.MESSAGE.FREEZE_REPLY.getT());
 
-
-        // base case
-        if (currentCohort.size() == 0)
+        // todo check checkpoint already taken by sequenceNum
+        // if cohorts is empty, or need not take checkpoint, directly REPLY
+        if (currentCohort.size() == 0 || (willingToCheckpoint && fls == 0))
         {
             Node fromNode = Node.getNode(fromNodeId);
             SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.FREEZE_REPLY.getT());
+            requestSet.remove(fromNodeId);      // prevent duplicate reply
         }
 
     }
@@ -147,7 +163,7 @@ public class Checkpoint {
         obNode.checkpoints.add(cpClock);
 
 
-        // todo calculate current cohort
+        // calculate current cohort
         List<Integer> cohort = obNode.cohort;
         for (int neiId : cohort)
         {
@@ -166,29 +182,28 @@ public class Checkpoint {
 
 
     /**
-     * Reply message to nodes who send the checkpoint message,
-     * If received replies from all cohorts, start unFreeze()
+     * receive REPLY message
+     * If received replies from all cohorts, start unFreeze() or REPLY to request node
      */
     public void receiveFreezeReply(int fromNodeId)
     {
-        // todo forever broadcast
         replyFromCohort.add(fromNodeId);
-        if (replyFromCohort.size() == obNode.cohort.size())
+        if (replyFromCohort.equals(currentCohort))  // wait for all replies from all current cohorts
         {
-            Set<Integer> cp = new HashSet<>(obNode.cohort);
-            if (replyFromCohort.equals(cp))
+            if (initiatorFlag)      // initiator should send unfreeze after receive reply from all
             {
-                // todo initiator should send unfreeze after receive reply from all
-                if (initiator == obNode.id)
-                {
-
-                }
-                else
-                {
-                    Node initNode = Node.getNode(initiator);
-                    SocketManager.send(initNode.hostname, initNode.port, obNode.id, 0, Server.MESSAGE.FREEZE_REPLY.getT());
-                }
+                unFreeze();
             }
+            else                    // reply to request node
+            {
+                for (int requestId : requestSet)
+                {
+                    Node reqNode = Node.getNode(requestId);
+                    SocketManager.send(reqNode.hostname, reqNode.port, obNode.id, 0, Server.MESSAGE.FREEZE_REPLY.getT());
+                }
+                requestSet.clear();
+            }
+
         }
     }
 
@@ -199,14 +214,21 @@ public class Checkpoint {
      */
     private void unFreeze()
     {
-        freezeSendFlag = false;
+        //freezeSendFlag = false;
         freezeCompleteFlag = false;
 
         // todo move to Driver
-        if (Driver.randomMessage.isStop)
+        if (RandomMessage.ins(obNode.id).isStop)
         {
-            Driver.randomMessage.isStop = false;
-            Driver.randomMessage.nextMessage();
+            RandomMessage.ins(obNode.id).isStop = false;
+            RandomMessage.ins(obNode.id).nextMessage();
+        }
+
+        // todo send unfreeze
+        for (int cohortId : currentCohort)
+        {
+            Node cohNode = Node.getNode(cohortId);
+            SocketManager.send(cohNode.hostname, cohNode.port, obNode.id, 0, Server.MESSAGE.UNFREEZE.getT());
         }
 
 
@@ -215,6 +237,10 @@ public class Checkpoint {
 
     public void receiveUnfreeze(int fromNodeId)
     {
+        freezeCompleteFlag = false;
+
+        currentCohort.clear();        // todo where to clear
+        replyFromCohort.clear();
 
     }
     /**

@@ -42,7 +42,7 @@ public class Server {
         Runnable launch = new Runnable() {
             @Override
             public void run() {
-                SocketManager.receive(obNode.port, new SocketManager.ServerCallback() {
+                SocketManager.receive(obNode.id, obNode.port, new SocketManager.ServerCallback() {
                     @Override
                     public void call(String message) {
                         checkMessage(message);

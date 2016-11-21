@@ -31,11 +31,11 @@ public class SocketManager {
         }
     }
 
-    public static void receive(int arPort, ServerCallback server) {
+    public static void receive(int nodeId, int arPort, ServerCallback server) {
         if (SOCKET_BY_SCTP) {
-            SocketManager.receiveBySCTP(arPort, server);
+            SocketManager.receiveBySCTP(nodeId, arPort, server);
         } else {
-            SocketManager.receiveByTCP(arPort, server);
+            SocketManager.receiveByTCP(nodeId, arPort, server);
         }
     }
 
@@ -53,7 +53,7 @@ public class SocketManager {
         }
     }
 
-    private static void receiveByTCP(int arPort, ServerCallback server) {
+    private static void receiveByTCP(int nodeId, int arPort, ServerCallback server) {
         String message = "";
         try {
             ServerSocket serverSock = new ServerSocket(arPort);
@@ -65,7 +65,7 @@ public class SocketManager {
                 message = reader.readLine();        // blocked until a message is received
                 reader.close();
 
-                System.out.println("Receive: " + message);
+                System.out.println("Node " + nodeId + " Receive: " + message);
                 if (server != null) {
                     server.call(message);
                 }
@@ -97,7 +97,7 @@ public class SocketManager {
         }
     }
 
-    private static void receiveBySCTP(int arPort, ServerCallback server) {
+    private static void receiveBySCTP(int nodeId, int arPort, ServerCallback server) {
         try{
             String message=null;
 
@@ -110,7 +110,7 @@ public class SocketManager {
                 MessageInfo messageInfo = sctpChannel.receive(byteBuffer , null, null);
                 message=byteToString(byteBuffer);
 
-                System.out.println("Receive: " + message);
+                System.out.println("Node " + nodeId + " Receive: " + message);
                 if (server != null) {
                     server.call(message);
                 }

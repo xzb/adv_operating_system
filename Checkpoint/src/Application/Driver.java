@@ -7,10 +7,6 @@ import Tool.Parser;
  */
 public class Driver {
 
-    public static Server server;
-    public static RandomMessage randomMessage;
-    public static Checkpoint checkpoint;
-
 
     /* user case:
     * run Server in a thread, forever loop
@@ -31,9 +27,9 @@ public class Driver {
         }
 
         // initialize objects
-        server = new Server(nid);
-        randomMessage = new RandomMessage(nid);
-        checkpoint = Checkpoint.ins(nid);
+        Server server = new Server(nid);
+        RandomMessage randomMessage = RandomMessage.ins(nid);
+        Checkpoint checkpoint = Checkpoint.ins(nid);
 
         // wait 10 seconds to let all servers ready
         try {

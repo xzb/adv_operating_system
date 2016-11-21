@@ -3,6 +3,7 @@ package Test
 import Application.*
 import Tool.*
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Test
 import static org.junit.Assert.assertEquals
 
@@ -13,8 +14,11 @@ class UnitTest {
 
     Application.Node node = Node.getNode(0);
 
-    @Before
-    public void setup() {
+    @BeforeClass
+    public static void setup() {
+        Server server0 = new Server(0);
+        Server server1 = new Server(1);
+        Server server2 = new Server(2);
     }
 
 
@@ -23,18 +27,16 @@ class UnitTest {
         assertEquals("cohortMap size:", Parser.numNodes, Parser.cohorts.size())
         assertEquals("operationList size:", Parser.numOperations, Parser.operationList.size())
     }
-    @Test
+    //@Test
     public void testNode() {
         assertEquals("cohort size of node 0:", 1, node.cohort.size())
     }
-    @Test
+    //@Test
     public void testRandomMessage() {
-        Parser.numRandomMessages = 3;
-        Server server0 = new Server(0);
-        Server server1 = new Server(1);
+        //Parser.numRandomMessages = 3;
 
-        RandomMessage randomMessage = new RandomMessage(0);
-        RandomMessage randomMessage1 = new RandomMessage(1);
+        RandomMessage randomMessage = RandomMessage.ins(0);
+        RandomMessage randomMessage1 = RandomMessage.ins(1);
         randomMessage.nextMessage();
         randomMessage1.nextMessage();
 
@@ -47,7 +49,17 @@ class UnitTest {
 
 
     @Test
-    public void testCheckpoint() {
+    public void testCheckpointSend() {
+        RandomMessage randomMessage1 = RandomMessage.ins(1);
+        randomMessage1.nextMessage();
+        RandomMessage randomMessage2 = RandomMessage.ins(2);
+        randomMessage2.nextMessage();
+        Checkpoint checkpoint = Checkpoint.ins(0);
+        checkpoint.nextOperation();
+
+    }
+    @Test
+    public void testCheckpointUnfreeze() {
 
     }
 

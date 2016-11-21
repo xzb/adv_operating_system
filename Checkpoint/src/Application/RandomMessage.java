@@ -3,6 +3,8 @@ package Application;
 import Tool.Parser;
 import Tool.SocketManager;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -14,7 +16,21 @@ public class RandomMessage
     private int remainNumMsg;
     public boolean isStop;
 
-    public RandomMessage(int nid)
+    private static Map<Integer, RandomMessage> obInstances;
+    public static RandomMessage ins(int nid)
+    {
+        if (obInstances == null)
+        {
+            obInstances = new HashMap<Integer, RandomMessage>();
+        }
+        if (!obInstances.containsKey(nid))
+        {
+            RandomMessage randm = new RandomMessage(nid);
+            obInstances.put(nid, randm);
+        }
+        return obInstances.get(nid);
+    }
+    private RandomMessage(int nid)
     {
         obNode = Node.getNode(nid);
         remainNumMsg = Parser.numRandomMessages;
