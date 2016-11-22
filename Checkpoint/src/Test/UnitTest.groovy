@@ -64,7 +64,7 @@ class UnitTest {
         while (1) ;
     }
 
-    @Test
+    //@Test
     public void testDirectMsgWithCheckpoint()
     {
         RandomMessage randomMessage0 = RandomMessage.ins(0);
@@ -74,19 +74,29 @@ class UnitTest {
         randomMessage1.directMessage(2);
         randomMessage2.directMessage(0);
 
+        // two 'c' test pass
         Daemon daemon = Daemon.ins(0);
         daemon.nextOperation();
 
         while (1) ;
     }
 
-    @Test
-    public void testCheckpointUnfreeze() {
-
-    }
 
     @Test
-    public void testRecovery() {
+    public void testDirectMsgWithRecovery() {
+        RandomMessage randomMessage0 = RandomMessage.ins(0);
+        RandomMessage randomMessage1 = RandomMessage.ins(1);
+        RandomMessage randomMessage2 = RandomMessage.ins(2);
+        randomMessage0.directMessage(1);
+        randomMessage1.directMessage(2);
+        randomMessage2.directMessage(0);
 
+        // two 'r' test pass
+        Daemon daemon = Daemon.ins(0);
+        daemon.nextOperation();
+
+        while (1) ;
     }
+
+    // todo 'c' and 'r' mix test
 }

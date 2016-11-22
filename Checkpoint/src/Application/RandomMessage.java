@@ -17,7 +17,7 @@ public class RandomMessage
 
     private Node obNode;
     private int remainNumMsg;
-    public boolean isStop;
+    private boolean isStop;
 
     private static Map<Integer, RandomMessage> obInstances;
     public static RandomMessage ins(int nid)
@@ -38,6 +38,10 @@ public class RandomMessage
         obNode = Node.getNode(nid);
         remainNumMsg = Parser.numRandomMessages;
         isStop = false;
+    }
+    public boolean isStop()
+    {
+        return isStop;
     }
 
     /*
@@ -79,7 +83,7 @@ public class RandomMessage
             }
             Node neiNode = Node.getNode(neiId);
                                                                  // todo use notify, or lock
-            if(!Checkpoint.ins(obNode.id).isFreeze()) {          // if FREEZE, cannot send
+            if(!isFreeze()) {          // if FREEZE, cannot send
                 // update send clock, FLS
                 obNode.clock[obNode.id]++;
                 int clock = obNode.clock[obNode.id];
@@ -110,13 +114,17 @@ public class RandomMessage
     // update receive clock, LLR
     public void receiveApplication(int fromNodeId, int label)
     {
-        if(!Checkpoint.ins(obNode.id).isFreeze())   // if FREEZE, cannot receive
+        if(!isFreeze())   // if FREEZE, cannot receive
         {
             obNode.clock[fromNodeId]++;
             obNode.LLR[fromNodeId] = label;         // label is monotonically increasing
         }
     }
 
+    private boolean isFreeze()
+    {
+        return Checkpoint.ins(obNode.id).isFreeze() || Recovery.ins(obNode.id).isFreeze();
+    }
 
     public void directMessage(int nid)
     {

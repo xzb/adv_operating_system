@@ -1,6 +1,5 @@
 package Application;
 
-import Tool.Parser;
 import Tool.SocketManager;
 
 import java.util.*;
@@ -103,7 +102,7 @@ public class Checkpoint {
 
     }
 
-    public void takeTentativeCheckpointAndRequestCohorts(int excludeNodeId)
+    private void takeTentativeCheckpointAndRequestCohorts(int excludeNodeId)
     {
         // mark TENTATIVE checkpoint
         // save LLS, sequenceNum as info
@@ -163,6 +162,7 @@ public class Checkpoint {
      * call in three situation: 1. initiator has no cohorts
      *                          2. initiator received all checkpoint replies
      *                          3. nodes receive confirm message and propagate
+     * todo if abort, should remove last obNode.checkpoints
      */
     private void sendCheckpointConfirm()
     {
@@ -172,9 +172,8 @@ public class Checkpoint {
         }
 
         isFreezeComplete = false;
-        if (RandomMessage.ins(obNode.id).isStop)            // restart random message
+        if (RandomMessage.ins(obNode.id).isStop())            // restart random message
         {
-            RandomMessage.ins(obNode.id).isStop = false;
             RandomMessage.ins(obNode.id).nextMessage();
         }
 
