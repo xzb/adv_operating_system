@@ -9,7 +9,7 @@ import java.util.*;
  * Created by xiezebin on 11/21/16.
  */
 public class Daemon {
-    private static int obNodeId;
+    private int obNodeId;
     private List<String> operationList;
 
     private static Map<Integer, Daemon> obInstances;
@@ -40,6 +40,16 @@ public class Daemon {
      */
     public void nextOperation()
     {
+        Runnable launch = new Runnable() {
+            @Override
+            public void run() {
+                nextOperationHelper();
+            }
+        };
+        new Thread(launch).start();
+    }
+    private void nextOperationHelper()
+    {
         if (!operationList.isEmpty())
         {
             String opPair = operationList.get(0);
@@ -49,11 +59,9 @@ public class Daemon {
 
             if (obNodeId == opId)       // proceed if top of operationList is current node
             {
-                System.out.println("Initiator node: " + obNodeId);
-
                 // exponential delay
                 Random rand = new Random();
-                double delayLambda = 1.0 / Parser.minSendDelay;
+                double delayLambda = 1.0 / Parser.minInstanceDelay;
                 double delay = Math.log(1 - rand.nextDouble()) / (-delayLambda);
                 try {
                     Thread.sleep((int) delay);
@@ -61,6 +69,7 @@ public class Daemon {
                 catch (Exception e) {}
 
 
+                System.out.println("Initiator node: " + obNodeId);
                 if (opType == 'c')
                 {
                     Checkpoint.ins(obNodeId).initiateCheckpoint();

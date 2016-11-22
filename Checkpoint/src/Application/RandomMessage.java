@@ -44,6 +44,17 @@ public class RandomMessage
     */
     public void nextMessage()
     {
+        Runnable launch = new Runnable() {
+            @Override
+            public void run() {
+                nextMessageHelper();
+            }
+        };
+        new Thread(launch).start();
+    }
+
+    private void nextMessageHelper()
+    {
         isStop = false;
 
         if (remainNumMsg > 0)
@@ -60,7 +71,7 @@ public class RandomMessage
             int randIndex = rand.nextInt(obNode.cohort.size());
             int neiId = obNode.cohort.get(randIndex);
             Node neiNode = Node.getNode(neiId);
-
+                                                                //todo use notify
             if(!Checkpoint.ins(obNode.id).isFreeze()) {          //todo lock to prevent receive freeze
                 // update send clock, FLS
                 obNode.clock[obNode.id]++;

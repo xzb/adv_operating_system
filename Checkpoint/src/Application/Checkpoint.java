@@ -65,9 +65,12 @@ public class Checkpoint {
         takeTentativeCheckpointAndRequestCohorts(obNode.id);
 
         // base case
+        System.out.println("initiator cohort size: " + currentCohort.size());
         if (currentCohort.size() == 0)
         {
             sendCheckpointConfirm();
+
+            receiveCheckpointConfirmReply(-1);      // since no cohorts, directly proceed as received all replies
         }
     }
 
@@ -124,9 +127,9 @@ public class Checkpoint {
                 currentCohort.add(neiId);
                 Node neiNode = Node.getNode(neiId);
                 SocketManager.send(neiNode.hostname, neiNode.port, obNode.id, llr, Server.MESSAGE.CHECKPOINT.getT());
-                obNode.LLR[neiId] = 0;          // reset LLR
             }
 
+            obNode.LLR[neiId] = 0;              // reset LLR
             obNode.FLS[neiId] = 0;              // reset FLS, will not take another tentative checkpoint
         }
     }
@@ -204,7 +207,10 @@ public class Checkpoint {
      */
     public void receiveCheckpointConfirmReply(int fromNodeId)
     {
-        replyFromCohort.add(fromNodeId);
+        if (fromNodeId >= 0)
+        {
+            replyFromCohort.add(fromNodeId);
+        }
         if (replyFromCohort.equals(currentCohort))
         {
             replyFromCohort.clear();

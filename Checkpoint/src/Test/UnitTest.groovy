@@ -56,9 +56,12 @@ class UnitTest {
         randomMessage1.nextMessage();
         RandomMessage randomMessage2 = RandomMessage.ins(2);
         randomMessage2.nextMessage();
-        Daemon daemon = Daemon.ins(0);
-        daemon.nextOperation();
 
+        // test daemon
+        Daemon daemon = Daemon.ins(0);
+        daemon.nextOperation();             // each next function is run in a single thread
+
+        while (1) ;
     }
     @Test
     public void testCheckpointUnfreeze() {
