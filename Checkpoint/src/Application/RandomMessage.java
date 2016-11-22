@@ -71,8 +71,8 @@ public class RandomMessage
             int randIndex = rand.nextInt(obNode.cohort.size());
             int neiId = obNode.cohort.get(randIndex);
             Node neiNode = Node.getNode(neiId);
-                                                                //todo use notify
-            if(!Checkpoint.ins(obNode.id).isFreeze()) {          //todo lock to prevent receive freeze
+                                                                 // todo use notify, or lock
+            if(!Checkpoint.ins(obNode.id).isFreeze()) {          // if FREEZE, cannot send
                 // update send clock, FLS
                 obNode.clock[obNode.id]++;
                 int clock = obNode.clock[obNode.id];
@@ -96,12 +96,13 @@ public class RandomMessage
 
 
     // update receive clock, LLR
-    public static void receiveApplication(int nodeId, int fromNodeId, int label)
+    public void receiveApplication(int fromNodeId, int label)
     {
-        Node node = Node.getNode(nodeId);
-        node.clock[fromNodeId]++;
-        node.LLR[fromNodeId] = label;         // label is monotonically increasing
-
+        if(!Checkpoint.ins(obNode.id).isFreeze())   // if FREEZE, cannot receive
+        {
+            obNode.clock[fromNodeId]++;
+            obNode.LLR[fromNodeId] = label;         // label is monotonically increasing
+        }
     }
 
 

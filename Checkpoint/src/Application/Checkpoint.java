@@ -13,8 +13,7 @@ public class Checkpoint {
     private Node obNode;
 
     private int sequenceNum;
-    //private boolean freezeSendFlag;          // todo use static lock
-    private boolean isFreezeComplete;
+    private boolean isFreezeComplete;       // todo use static lock
 
     private boolean willingToCheckpoint;
     private Set<Integer> currentCohort;
@@ -47,7 +46,6 @@ public class Checkpoint {
     }
     public boolean isFreeze()
     {
-        //return freezeSendFlag || isFreezeComplete;
         return isFreezeComplete;
     }
 
@@ -90,10 +88,7 @@ public class Checkpoint {
         int fls = obNode.FLS[fromNodeId];
         if (willingToCheckpoint && fls > 0 && llr >= fls)
         {
-            // todo forward checkpoint message, how to exclude initiator?
-
-
-            takeTentativeCheckpointAndRequestCohorts(fromNodeId);
+            takeTentativeCheckpointAndRequestCohorts(fromNodeId);       // fromNodeId is excluded when propagating
         }
 
 
@@ -110,8 +105,8 @@ public class Checkpoint {
 
     public void takeTentativeCheckpointAndRequestCohorts(int excludeNodeId)
     {
-        // mark tentative checkpoint
-        sequenceNum++;
+        // mark TENTATIVE checkpoint
+        sequenceNum++;                      // todo add as checkpoint info
         int[] cpClock = new int[Parser.numNodes];
         System.arraycopy(obNode.clock, 0, cpClock, 0, Parser.numNodes);
         obNode.checkpoints.add(cpClock);
@@ -122,7 +117,7 @@ public class Checkpoint {
         for (int neiId : cohort)
         {
             int llr = obNode.LLR[neiId];
-            if (llr > 0 && neiId != excludeNodeId)  // todo can exclude fromNodeId
+            if (llr > 0 && neiId != excludeNodeId)  // can exclude fromNodeId
             {
                 currentCohort.add(neiId);
                 Node neiNode = Node.getNode(neiId);
@@ -137,7 +132,7 @@ public class Checkpoint {
 
     /**
      * receive REPLY message
-     * If received replies from all cohorts, start sendCheckpointConfirm() or REPLY to request node
+     * If received replies from all cohorts, start sendCheckpointConfirm() or REPLY to requested node
      */
     public void receiveCheckpointReply(int fromNodeId)
     {
@@ -165,7 +160,10 @@ public class Checkpoint {
     /**
      * Second phase
      * confirm checkpoint or recovery
-     * todo update LLS, reset FLS, LLR
+     * call in three situation: 1. initiator has no cohorts
+     *                          2. initiator received all checkpoint replies
+     *                          3. nodes receive confirm message and propagate
+     * todo update LLS
      */
     private void sendCheckpointConfirm()
     {
@@ -187,9 +185,6 @@ public class Checkpoint {
             Node cohNode = Node.getNode(cohortId);
             SocketManager.send(cohNode.hostname, cohNode.port, obNode.id, 0, Server.MESSAGE.CHECKPOINT_CONFIRM.getT());
         }
-
-
-        // todo notify next initiator
     }
 
     public void receiveCheckpointConfirm(int fromNodeId)
@@ -197,13 +192,14 @@ public class Checkpoint {
         // propagate unfreeze message
         sendCheckpointConfirm();
 
-        // send REPLY to fromNodeId, todo reply until receive all replies from cohorts
+        // send REPLY to fromNodeId, todo is it better to reply until receive all replies from cohorts
         Node fromNode = Node.getNode(fromNodeId);
         SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.CHECKPOINT_CONFIRM_REPLY.getT());
-
     }
+
     /**
-     * If received replies from all cohorts, send operationComplete to notify next initiator
+     * If initiator has no cohorts, or received replies from all cohorts,
+     * send operationComplete to notify next initiator
      */
     public void receiveCheckpointConfirmReply(int fromNodeId)
     {
@@ -214,19 +210,15 @@ public class Checkpoint {
         if (replyFromCohort.equals(currentCohort))
         {
             replyFromCohort.clear();
-            currentCohort.clear();      //todo where
+            currentCohort.clear();          // clear here
 
             if (initiatorFlag)
             {
-                // todo how does next initiator know its turn
-                // send operation complete to all nodes
+                // send operationComplete to all nodes, in order to notify next initiator
                 Daemon.ins(obNode.id).broadcastOperationComplete();
             }
         }
-
     }
-
-
 
 
 }

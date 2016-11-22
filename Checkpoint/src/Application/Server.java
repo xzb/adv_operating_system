@@ -71,7 +71,7 @@ public class Server {
 
         if (mType.equals(MESSAGE.APPLICATION.getT()))
         {
-            RandomMessage.receiveApplication(obNode.id, fromNodeId, piggyback);
+            RandomMessage.ins(obNode.id).receiveApplication(fromNodeId, piggyback);
         }
 
         else if (mType.equals(MESSAGE.CHECKPOINT.getT()))
