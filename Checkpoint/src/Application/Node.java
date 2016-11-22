@@ -17,7 +17,7 @@ public class Node {
     public int[] FLS;
     public int[] LLR;
     public int[] LLS;
-    public List<int[]> checkpoints;     //todo checkpoints class
+    public List<CheckpointInfo> checkpoints;
 
     private static Map<Integer, Node> nodePool;             // singleton
 
@@ -34,7 +34,7 @@ public class Node {
         FLS = new int[Parser.numNodes];
         LLR = new int[Parser.numNodes];
         LLS = new int[Parser.numNodes];
-        checkpoints = new ArrayList<int[]>();
+        checkpoints = new ArrayList<CheckpointInfo>();
 
     }
 

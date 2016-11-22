@@ -106,10 +106,10 @@ public class Checkpoint {
     public void takeTentativeCheckpointAndRequestCohorts(int excludeNodeId)
     {
         // mark TENTATIVE checkpoint
-        sequenceNum++;                      // todo add as checkpoint info
-        int[] cpClock = new int[Parser.numNodes];
-        System.arraycopy(obNode.clock, 0, cpClock, 0, Parser.numNodes);
-        obNode.checkpoints.add(cpClock);
+        // save LLS, sequenceNum as info
+        sequenceNum++;
+        CheckpointInfo cpInfo = new CheckpointInfo(sequenceNum, obNode.clock, obNode.LLS);
+        obNode.checkpoints.add(cpInfo);
 
 
         // calculate current cohort
@@ -163,7 +163,6 @@ public class Checkpoint {
      * call in three situation: 1. initiator has no cohorts
      *                          2. initiator received all checkpoint replies
      *                          3. nodes receive confirm message and propagate
-     * todo update LLS
      */
     private void sendCheckpointConfirm()
     {

@@ -48,7 +48,7 @@ class UnitTest {
     }
 
 
-    @Test
+    //@Test
     public void testCheckpointSend() {
         RandomMessage randomMessage0 = RandomMessage.ins(0);
         randomMessage0.nextMessage();
@@ -63,6 +63,23 @@ class UnitTest {
 
         while (1) ;
     }
+
+    @Test
+    public void testDirectMsgWithCheckpoint()
+    {
+        RandomMessage randomMessage0 = RandomMessage.ins(0);
+        RandomMessage randomMessage1 = RandomMessage.ins(1);
+        RandomMessage randomMessage2 = RandomMessage.ins(2);
+        randomMessage0.directMessage(1);
+        randomMessage1.directMessage(2);
+        randomMessage2.directMessage(0);
+
+        Daemon daemon = Daemon.ins(0);
+        daemon.nextOperation();
+
+        while (1) ;
+    }
+
     @Test
     public void testCheckpointUnfreeze() {
 

@@ -12,6 +12,9 @@ import java.util.Random;
  */
 public class RandomMessage
 {
+    private boolean isDebug = false;
+    private int msgDstId;
+
     private Node obNode;
     private int remainNumMsg;
     public boolean isStop;
@@ -70,6 +73,10 @@ public class RandomMessage
 
             int randIndex = rand.nextInt(obNode.cohort.size());
             int neiId = obNode.cohort.get(randIndex);
+            if (isDebug)                    // if in debug mode, direct msg instead of random
+            {
+                neiId = msgDstId;
+            }
             Node neiNode = Node.getNode(neiId);
                                                                  // todo use notify, or lock
             if(!Checkpoint.ins(obNode.id).isFreeze()) {          // if FREEZE, cannot send
@@ -80,12 +87,17 @@ public class RandomMessage
                 {
                     obNode.FLS[neiId] = clock;      // assign first message after checkpoint
                 }
+                // update LLS
+                obNode.LLS[neiId] = clock;
 
                 // Application piggyback clock as label
                 SocketManager.send(neiNode.hostname, neiNode.port, obNode.id, clock, Server.MESSAGE.APPLICATION.getT());
                 remainNumMsg--;
 
-                nextMessage();          // loop until freeze
+                if (!isDebug)               // if in debug mode, do not loop
+                {
+                    nextMessage();          // loop until freeze
+                }
             }
             else
             {
@@ -106,4 +118,12 @@ public class RandomMessage
     }
 
 
+    public void directMessage(int nid)
+    {
+        isDebug = true;
+        msgDstId = nid;
+        nextMessageHelper();
+
+        isDebug = false;
+    }
 }
