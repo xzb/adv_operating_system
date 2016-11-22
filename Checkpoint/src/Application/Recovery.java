@@ -1,5 +1,6 @@
 package Application;
 
+import Tool.Parser;
 import Tool.SocketManager;
 
 import java.util.*;
@@ -11,14 +12,15 @@ public class Recovery {
 
     private Node obNode;
 
-    private int sequenceNum;
     private boolean isFreezeComplete;       // todo use static lock
 
-    private boolean willingToCheckpoint;
+    private boolean willingToRoll;
+    private boolean readyToRoll;            // prevent forever loop; if false, roll once received confirm message
     private Set<Integer> currentCohort;
     private Set<Integer> replyFromCohort;
     private boolean initiatorFlag;
     private Set<Integer> requestSet;
+    private CheckpointInfo cpInfo;
 
     private static Map<Integer, Recovery> obInstances;
     public static Recovery ins(int nid)
@@ -37,8 +39,8 @@ public class Recovery {
     private Recovery(int nid)
     {
         obNode = Node.getNode(nid);
-        sequenceNum = 0;
-        willingToCheckpoint = true;
+        willingToRoll = true;
+        readyToRoll = true;
         currentCohort = new HashSet<Integer>();
         replyFromCohort = new HashSet<Integer>();
         requestSet = new HashSet<Integer>();
@@ -55,7 +57,7 @@ public class Recovery {
 
         initiatorFlag = true;
         isFreezeComplete = true;
-        takeTentativeCheckpointAndRequestCohorts(obNode.id);
+        prepareToRollAndRequestCohorts(obNode.id);
 
         // base case
         System.out.println("initiator cohort size: " + currentCohort.size());
@@ -67,52 +69,68 @@ public class Recovery {
         }
     }
 
-
-    public void receiveRecovery(int fromNodeId, int llr)
+    /**
+     * main different with Checkpoint
+     */
+    public void receiveRecovery(int fromNodeId, int lls)
     {
         requestSet.add(fromNodeId);
         isFreezeComplete = true;
-        int fls = obNode.FLS[fromNodeId];
-        if (willingToCheckpoint && fls > 0 && llr >= fls)
+        int llr = obNode.LLR[fromNodeId];
+
+
+        // if need not recovery, or already set recovery, directly REPLY
+        if (llr <= lls || !readyToRoll)
         {
-            takeTentativeCheckpointAndRequestCohorts(fromNodeId);       // fromNodeId is excluded when propagating
+            directlyReply(fromNodeId);
         }
 
-
-        // todo check checkpoint already taken by sequenceNum
-        // if cohorts is empty, or need not take checkpoint, directly REPLY
-        if (currentCohort.size() == 0 || (willingToCheckpoint && fls == 0))
+        else if (willingToRoll && llr > lls && readyToRoll)          // prevent forever loop
         {
-            Node fromNode = Node.getNode(fromNodeId);
-            SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.CHECKPOINT_REPLY.getT());
-            requestSet.remove(fromNodeId);      // prevent duplicate reply
+            prepareToRollAndRequestCohorts(fromNodeId);         // fromNodeId is excluded when propagating
+
+            // if cohorts is empty, directly REPLY
+            if (currentCohort.size() == 0)
+            {
+                directlyReply(fromNodeId);
+            }
         }
 
     }
-
-    private void takeTentativeCheckpointAndRequestCohorts(int excludeNodeId)
+    private void directlyReply(int fromNodeId)
     {
-        // mark TENTATIVE checkpoint
-        // save LLS, sequenceNum as info
-        sequenceNum++;
-        CheckpointInfo cpInfo = new CheckpointInfo(sequenceNum, obNode.clock, obNode.LLS);
-        obNode.checkpoints.add(cpInfo);
+        Node fromNode = Node.getNode(fromNodeId);
+        SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.RECOVERY_REPLY.getT());
+        requestSet.remove(fromNodeId);      // prevent duplicate reply
+    }
 
+    private void prepareToRollAndRequestCohorts(int excludeNodeId)
+    {
+        // retrieve TENTATIVE checkpoint
+        readyToRoll = false;
+        if (obNode.checkpoints.isEmpty())
+        {
+            int[] initClock = new int[Parser.numNodes];
+            int[] initLLS = new int[Parser.numNodes];
+            cpInfo = new CheckpointInfo(0, initClock, initLLS);
+        }
+        else
+        {
+            cpInfo = obNode.checkpoints.remove(obNode.checkpoints.size() - 1);
+        }
 
         // calculate current cohort
         List<Integer> cohort = obNode.cohort;
         for (int neiId : cohort)
         {
-            int llr = obNode.LLR[neiId];
-            if (llr > 0 && neiId != excludeNodeId)  // can exclude fromNodeId
+            int lls = cpInfo.LLS[neiId];
+            if (neiId != excludeNodeId)         // send to all neighbor no matter lls; can exclude fromNodeId
             {
                 currentCohort.add(neiId);
                 Node neiNode = Node.getNode(neiId);
-                SocketManager.send(neiNode.hostname, neiNode.port, obNode.id, llr, Server.MESSAGE.CHECKPOINT.getT());
+                SocketManager.send(neiNode.hostname, neiNode.port, obNode.id, lls, Server.MESSAGE.RECOVERY.getT());
             }
 
-            obNode.LLR[neiId] = 0;              // reset LLR
-            obNode.FLS[neiId] = 0;              // reset FLS, will not take another tentative checkpoint
         }
     }
 
@@ -131,7 +149,7 @@ public class Recovery {
                 for (int requestId : requestSet)
                 {
                     Node reqNode = Node.getNode(requestId);
-                    SocketManager.send(reqNode.hostname, reqNode.port, obNode.id, 0, Server.MESSAGE.CHECKPOINT_REPLY.getT());
+                    SocketManager.send(reqNode.hostname, reqNode.port, obNode.id, 0, Server.MESSAGE.RECOVERY_REPLY.getT());
                 }
                 requestSet.clear();
             }
@@ -143,12 +161,26 @@ public class Recovery {
     /**
      * Second phase
      * confirm checkpoint or recovery
+     *
+     * todo if abort, should add cpInfo back to obNode.checkpoints
      */
     private void sendRecoveryConfirm()
     {
         if (!isFreezeComplete)          // prevent duplicate unfreeze
         {
             return;
+        }
+
+        // if readyToRestore, restore clock, reset FLS,LLR
+        if (!readyToRoll)
+        {
+            System.arraycopy(cpInfo.clock, 0, obNode.clock, 0, cpInfo.clock.length);    // cpInfo.clock -> obNode.clock
+            for (int neiId : obNode.cohort)
+            {
+                obNode.FLS[neiId] = 0;
+                obNode.LLR[neiId] = 0;
+            }
+            readyToRoll = true;
         }
 
         isFreezeComplete = false;
@@ -161,7 +193,7 @@ public class Recovery {
         for (int cohortId : currentCohort)
         {
             Node cohNode = Node.getNode(cohortId);
-            SocketManager.send(cohNode.hostname, cohNode.port, obNode.id, 0, Server.MESSAGE.CHECKPOINT_CONFIRM.getT());
+            SocketManager.send(cohNode.hostname, cohNode.port, obNode.id, 0, Server.MESSAGE.RECOVERY_CONFIRM.getT());
         }
     }
 
@@ -170,9 +202,9 @@ public class Recovery {
         // propagate unfreeze message
         sendRecoveryConfirm();
 
-        // send REPLY to fromNodeId, todo is it better to reply until receive all replies from cohorts
+        // send REPLY to fromNodeId
         Node fromNode = Node.getNode(fromNodeId);
-        SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.CHECKPOINT_CONFIRM_REPLY.getT());
+        SocketManager.send(fromNode.hostname, fromNode.port, obNode.id, 0, Server.MESSAGE.RECOVERY_CONFIRM_REPLY.getT());
     }
 
 
