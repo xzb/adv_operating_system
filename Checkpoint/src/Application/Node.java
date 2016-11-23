@@ -54,6 +54,15 @@ public class Node {
     // get all nodes
     public static Collection<Node> getAllNodes()
     {
+        // reach all nodes
+        for (int nid = 0; nid < Parser.numNodes; nid++)
+        {
+            if (!nodePool.containsKey(nid))
+            {
+                Node node = new Node(nid);
+                nodePool.put(nid, node);
+            }
+        }
         return nodePool.values();
     }
 }

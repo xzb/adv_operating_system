@@ -13,6 +13,9 @@ import static org.junit.Assert.assertEquals
 class UnitTest {
 
     Application.Node node = Application.Node.getNode(0);
+    RandomMessage randomMessage0 = RandomMessage.ins(0);
+    RandomMessage randomMessage1 = RandomMessage.ins(1);
+    RandomMessage randomMessage2 = RandomMessage.ins(2);
 
     @BeforeClass
     public static void setup() {
@@ -31,13 +34,10 @@ class UnitTest {
     public void testNode() {
         assertEquals("cohort size of node 0:", 1, node.cohort.size())
     }
-    //@Test
+    //@Test todo remove magic number
     public void testRandomMessage() {
-        //Parser.numRandomMessages = 3;
 
-        RandomMessage randomMessage = RandomMessage.ins(0);
-        RandomMessage randomMessage1 = RandomMessage.ins(1);
-        randomMessage.nextMessage();
+        randomMessage0.nextMessage();
         randomMessage1.nextMessage();
 
         assertEquals("send clock of node 0:", Parser.numRandomMessages, node.clock[0])
@@ -48,49 +48,27 @@ class UnitTest {
     }
 
 
-    //@Test
-    public void testCheckpointSend() {
-        RandomMessage randomMessage0 = RandomMessage.ins(0);
-        randomMessage0.nextMessage();
-        RandomMessage randomMessage1 = RandomMessage.ins(1);
+    @Test
+    public void testRandomMsgWithOperation() {
+        randomMessage0.nextMessage();   // each next function is run in a single thread
         randomMessage1.nextMessage();
-        RandomMessage randomMessage2 = RandomMessage.ins(2);
         randomMessage2.nextMessage();
 
         // test daemon
-        Daemon daemon = Daemon.ins(0);
-        daemon.nextOperation();             // each next function is run in a single thread
-
-        while (1) ;
-    }
-
-    //@Test
-    public void testDirectMsgWithCheckpoint()
-    {
-        RandomMessage randomMessage0 = RandomMessage.ins(0);
-        RandomMessage randomMessage1 = RandomMessage.ins(1);
-        RandomMessage randomMessage2 = RandomMessage.ins(2);
-        randomMessage0.directMessage(1);
-        randomMessage1.directMessage(2);
-        randomMessage2.directMessage(0);
-
-        // two 'c' test pass
         Daemon daemon = Daemon.ins(0);
         daemon.nextOperation();
 
         while (1) ;
     }
 
-
-    @Test
-    public void testDirectMsgWithRecovery() {
-        RandomMessage randomMessage0 = RandomMessage.ins(0);
-        RandomMessage randomMessage1 = RandomMessage.ins(1);
-        RandomMessage randomMessage2 = RandomMessage.ins(2);
+    //@Test
+    public void testDirectMsgWithOperation()
+    {
         randomMessage0.directMessage(1);
         randomMessage1.directMessage(2);
         randomMessage2.directMessage(0);
 
+        // two 'c' test pass
         // two 'r' test pass
         Daemon daemon = Daemon.ins(0);
         daemon.nextOperation();
@@ -98,5 +76,5 @@ class UnitTest {
         while (1) ;
     }
 
-    // todo 'c' and 'r' mix test
+
 }

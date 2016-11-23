@@ -105,6 +105,7 @@ public class RandomMessage
             }
             else
             {
+                System.out.println("Node " + obNode.id + " stop random message.");
                 isStop = true;
             }
         }
@@ -123,7 +124,10 @@ public class RandomMessage
 
     private boolean isFreeze()
     {
-        return Checkpoint.ins(obNode.id).isFreeze() || Recovery.ins(obNode.id).isFreeze();
+        boolean cpFreeze = Checkpoint.ins(obNode.id).isFreeze();
+        boolean rcFreeze = Recovery.ins(obNode.id).isFreeze();
+        //System.out.println("Node " + obNode.id + " cpFreeze: " + cpFreeze + " rvFreeze: " + rcFreeze);
+        return cpFreeze || rcFreeze;
     }
 
     public void directMessage(int nid)

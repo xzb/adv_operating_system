@@ -174,6 +174,12 @@ public class Recovery {
         // if readyToRestore, restore clock, reset FLS,LLR
         if (!readyToRoll)
         {
+            System.out.println("Node " + obNode.id + " clock recovery from " +
+                            Arrays.toString(obNode.clock) +
+                            " to " +
+                            Arrays.toString(cpInfo.clock)
+            );
+
             System.arraycopy(cpInfo.clock, 0, obNode.clock, 0, cpInfo.clock.length);    // cpInfo.clock -> obNode.clock
             for (int neiId : obNode.cohort)
             {
@@ -186,6 +192,7 @@ public class Recovery {
         isFreezeComplete = false;
         if (RandomMessage.ins(obNode.id).isStop())            // restart random message
         {
+            System.out.println("Node " + obNode.id + " restart random message.");
             RandomMessage.ins(obNode.id).nextMessage();
         }
 
@@ -223,6 +230,7 @@ public class Recovery {
             {
                 // send operationComplete to all nodes, in order to notify next initiator
                 Daemon.ins(obNode.id).broadcastOperationComplete();
+                initiatorFlag = false;      // reset
             }
         }
     }

@@ -174,6 +174,7 @@ public class Checkpoint {
         isFreezeComplete = false;
         if (RandomMessage.ins(obNode.id).isStop())            // restart random message
         {
+            System.out.println("Node " + obNode.id + " restart random message.");
             RandomMessage.ins(obNode.id).nextMessage();
         }
 
@@ -214,6 +215,7 @@ public class Checkpoint {
             {
                 // send operationComplete to all nodes, in order to notify next initiator
                 Daemon.ins(obNode.id).broadcastOperationComplete();
+                initiatorFlag = false;      // reset
             }
         }
     }
