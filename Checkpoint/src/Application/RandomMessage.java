@@ -82,8 +82,8 @@ public class RandomMessage
                 neiId = msgDstId;
             }
             Node neiNode = Node.getNode(neiId);
-                                                                 // todo use notify, or lock
-            if(!isFreeze()) {          // if FREEZE, cannot send
+                                                    // todo use notify, or lock; isFreeze() will wait until nextOperation() finish?
+            if(!isFreeze()) {               // if FREEZE, cannot send
                 // update send clock, FLS
                 obNode.clock[obNode.id]++;
                 int clock = obNode.clock[obNode.id];

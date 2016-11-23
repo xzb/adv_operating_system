@@ -1,5 +1,6 @@
 package Application;
 
+import Tool.FileIO;
 import Tool.Parser;
 import Tool.SocketManager;
 
@@ -118,6 +119,9 @@ public class Recovery {
         {
             cpInfo = obNode.checkpoints.remove(obNode.checkpoints.size() - 1);
         }
+        // for Testing, validation
+        FileIO.writeFile("Recovery: Node " + obNode.id + " clock " + Arrays.toString(cpInfo.clock));
+
 
         // calculate current cohort
         List<Integer> cohort = obNode.cohort;
@@ -231,6 +235,7 @@ public class Recovery {
                 // send operationComplete to all nodes, in order to notify next initiator
                 Daemon.ins(obNode.id).broadcastOperationComplete();
                 initiatorFlag = false;      // reset
+                FileIO.writeFile("Recovery finish.");
             }
         }
     }

@@ -1,5 +1,6 @@
 package Application;
 
+import Tool.FileIO;
 import Tool.SocketManager;
 
 import java.util.*;
@@ -109,6 +110,9 @@ public class Checkpoint {
         sequenceNum++;
         CheckpointInfo cpInfo = new CheckpointInfo(sequenceNum, obNode.clock, obNode.LLS);
         obNode.checkpoints.add(cpInfo);
+        // for Testing, validation
+        FileIO.writeFile("Checkpoint: Node " + obNode.id + " clock " + Arrays.toString(obNode.clock));
+        // todo save clock of nodes that does not take checkpoint
 
 
         // calculate current cohort
@@ -216,6 +220,7 @@ public class Checkpoint {
                 // send operationComplete to all nodes, in order to notify next initiator
                 Daemon.ins(obNode.id).broadcastOperationComplete();
                 initiatorFlag = false;      // reset
+                FileIO.writeFile("Checkpointing finish.");
             }
         }
     }
