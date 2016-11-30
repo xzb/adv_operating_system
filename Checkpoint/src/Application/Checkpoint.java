@@ -220,7 +220,7 @@ public class Checkpoint {
                 // send operationComplete to all nodes, in order to notify next initiator
                 Daemon.ins(obNode.id).broadcastOperationComplete();
                 initiatorFlag = false;      // reset
-                FileIO.writeFile("Checkpointing finish.");
+                FileIO.writeFile("Checkpointing at Node " + obNode.id + " finish.");
             }
         }
     }

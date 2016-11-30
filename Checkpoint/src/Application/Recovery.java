@@ -84,6 +84,7 @@ public class Recovery {
         if (llr <= lls || !readyToRoll)
         {
             directlyReply(fromNodeId);
+            FileIO.writeFile("Current time: Node " + obNode.id + " clock " + Arrays.toString(obNode.clock));
         }
 
         else if (willingToRoll && llr > lls && readyToRoll)          // prevent forever loop
@@ -117,7 +118,7 @@ public class Recovery {
         }
         else
         {
-            cpInfo = obNode.checkpoints.remove(obNode.checkpoints.size() - 1);
+            cpInfo = obNode.checkpoints.get(obNode.checkpoints.size() - 1);     // need not remove
         }
         // for Testing, validation
         FileIO.writeFile("Recovery: Node " + obNode.id + " clock " + Arrays.toString(cpInfo.clock));
@@ -166,7 +167,7 @@ public class Recovery {
      * Second phase
      * confirm checkpoint or recovery
      *
-     * todo if abort, should add cpInfo back to obNode.checkpoints
+     * todo if abort
      */
     private void sendRecoveryConfirm()
     {
@@ -235,7 +236,7 @@ public class Recovery {
                 // send operationComplete to all nodes, in order to notify next initiator
                 Daemon.ins(obNode.id).broadcastOperationComplete();
                 initiatorFlag = false;      // reset
-                FileIO.writeFile("Recovery finish.");
+                FileIO.writeFile("Recovery at Node " + obNode.id + " finish.");
             }
         }
     }
