@@ -80,7 +80,7 @@ public class Parser {
             }
 
         }catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 

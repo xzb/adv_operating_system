@@ -15,5 +15,4 @@ javac Application/Driver.java
 ./launcher-server.sh
 
 5.test correctness
-javac Test/Testing.java
-java Test.Testing
+vi log.txt    // check vector time after each operation

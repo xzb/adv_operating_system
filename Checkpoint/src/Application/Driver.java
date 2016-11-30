@@ -24,6 +24,7 @@ public class Driver {
         if (args.length > 1)
         {
             Parser.config = args[1];        // config file dir
+            new Parser();                   // update Parser
         }
 
         // initialize objects
